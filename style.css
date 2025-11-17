@@ -480,6 +480,32 @@ textarea {
   max-height: none;  /* ✅ 높이 제한 해제 */
 }
 
+/* ⭐ 미로 탭 상단 여백 완전 제거 */
+#mazeTab {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#mazeTab h2 {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#mazeTab iframe {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#mazeTab p {
+  margin-top: 6px !important;
+}
+
+/* content의 padding 유지하되 미로탭은 제외 */
+.content #mazeTab {
+  padding: 0 !important;
+}
+
 
 /* =========================
    ⚖️ 푸터
@@ -509,5 +535,6 @@ footer a:hover {
   text-decoration: underline;
   color: #ffdf70;
 }
+
 
 
