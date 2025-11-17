@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>미로</title>
+<title>🌀 랜덤 미로 게임</title>
 
 <style>
 html, body {
@@ -16,32 +16,43 @@ html, body {
   text-align: center;
 }
 
-/* 캔버스: 화면 전체에 맞게 */
-#mazeCanvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-  border: 3px solid #1e396e;
-  background: #0a1225;
-  border-radius: 8px;
+/* 제목 + 버튼 */
+.header {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 50;
 }
 
-/* 버튼 */
+.header h1 {
+  margin: 0;
+  font-size: 20px;
+  color: #ffd447;
+}
+
 #generateBtn {
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 8px;
   border: none;
   background: #ffd447;
   color: #1a1300;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 10px;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 50;
 }
 #generateBtn:hover { opacity: 0.9; }
+
+/* 캔버스 */
+#mazeCanvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  background: #0a1225;
+  border-top: 60px solid transparent; /* 제목/버튼 공간 확보 */
+}
 
 /* 모바일 조이스틱 */
 #joystick {
@@ -72,7 +83,10 @@ html, body {
 
 <body>
 
-<button id="generateBtn">🔄 새로운 미로 생성</button>
+<div class="header">
+  <h1>🌀 랜덤 미로 게임</h1>
+  <button id="generateBtn">🔄 새 미로</button>
+</div>
 
 <canvas id="mazeCanvas"></canvas>
 
@@ -81,42 +95,41 @@ html, body {
 
 <script>
 // =========================
-// 기본 캔버스 설정 (반응형)
+// 캔버스 설정 (반응형)
 // =========================
 const canvas = document.getElementById("mazeCanvas");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas() {
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
-
-  // cellSize를 새 크기에 맞게 재계산
-  cellSize = Math.floor(canvas.width / cols);
-  if (cellSize * rows > canvas.height) {
-    cellSize = Math.floor(canvas.height / rows);
-  }
-
-  drawMaze();
-}
-
-window.addEventListener("resize", resizeCanvas);
-
-
-// =========================
-// 전역 변수
-// =========================
 let rows = 25;
 let cols = 25;
-let cellSize = 0;
+let cellSize = 20;
 
 let grid = [];
 let stack = [];
 let player = { r: 0, c: 0 };
 let exit = { r: rows - 1, c: cols - 1 };
 
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // cellSize 보정
+  cellSize = Math.floor(canvas.width / cols);
+  if (cellSize * rows > canvas.height - 60) {
+    cellSize = Math.floor((canvas.height - 60) / rows);
+  }
+  if (cellSize < 4) cellSize = 4;
+
+  drawMaze();
+}
+
+window.addEventListener("resize", () => {
+  resizeCanvas();
+});
+
 
 // =========================
-// 셀 생성
+// 셀 구조
 // =========================
 class Cell {
   constructor(r, c) {
@@ -128,7 +141,7 @@ class Cell {
 
   draw() {
     const x = this.c * cellSize;
-    const y = this.r * cellSize;
+    const y = this.r * cellSize + 60; // 제목 공간 확보
 
     ctx.strokeStyle = "#eaf2ff";
     ctx.lineWidth = 2;
@@ -140,7 +153,7 @@ class Cell {
   }
 }
 
-function drawLine(x1,y1,x2,y2){
+function drawLine(x1,y1,x2,y2) {
   ctx.beginPath();
   ctx.moveTo(x1,y1);
   ctx.lineTo(x2,y2);
@@ -149,7 +162,7 @@ function drawLine(x1,y1,x2,y2){
 
 
 // =========================
-// DFS 미로 생성기
+// DFS 미로 생성
 // =========================
 function generateMaze() {
   grid = [];
@@ -207,7 +220,7 @@ function removeWalls(a, b) {
 
 
 // =========================
-// 미로 그리기
+// 미로 + 플레이어 그리기
 // =========================
 function drawMaze() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -217,7 +230,7 @@ function drawMaze() {
   // 플레이어
   drawCircle(
     player.c * cellSize + cellSize/2,
-    player.r * cellSize + cellSize/2,
+    player.r * cellSize + cellSize/2 + 60,
     cellSize/3,
     "#68c3ff"
   );
@@ -225,7 +238,7 @@ function drawMaze() {
   // 출구
   drawCircle(
     exit.c * cellSize + cellSize/2,
-    exit.r * cellSize + cellSize/2,
+    exit.r * cellSize + cellSize/2 + 60,
     cellSize/3,
     "#ffd447"
   );
@@ -240,31 +253,16 @@ function drawCircle(x,y,r,color){
 
 
 // =========================
-// 이동 처리 (WASD + 방향키 + 조이스틱)
+// 이동(WASD, 방향키)
 // =========================
 document.addEventListener("keydown", (e) => {
   let key = e.key;
   let cell = grid[player.r][player.c];
 
-  // 위쪽 이동 (W, ArrowUp)
-  if ((key === "w" || key === "W" || key === "ArrowUp") && !cell.walls.top) {
-    player.r--;
-  }
-
-  // 아래 이동 (S, ArrowDown)
-  if ((key === "s" || key === "S" || key === "ArrowDown") && !cell.walls.bottom) {
-    player.r++;
-  }
-
-  // 왼쪽 이동 (A, ArrowLeft)
-  if ((key === "a" || key === "A" || key === "ArrowLeft") && !cell.walls.left) {
-    player.c--;
-  }
-
-  // 오른쪽 이동 (D, ArrowRight)
-  if ((key === "d" || key === "D" || key === "ArrowRight") && !cell.walls.right) {
-    player.c++;
-  }
+  if ((key === "w" || key === "ArrowUp") && !cell.walls.top) player.r--;
+  if ((key === "s" || key === "ArrowDown") && !cell.walls.bottom) player.r++;
+  if ((key === "a" || key === "ArrowLeft") && !cell.walls.left) player.c--;
+  if ((key === "d" || key === "ArrowRight") && !cell.walls.right) player.c++;
 
   drawMaze();
   checkWin();
@@ -272,13 +270,11 @@ document.addEventListener("keydown", (e) => {
 
 
 // =========================
-// 승리 체크
+// 승리 판정
 // =========================
 function checkWin() {
   if (player.r === exit.r && player.c === exit.c) {
-    setTimeout(() => {
-      alert("🎉 미궁 탈출 성공!");
-    }, 20);
+    setTimeout(() => alert("🎉 미궁 탈출 성공!"), 50);
   }
 }
 
@@ -290,43 +286,38 @@ function newGame() {
   generateMaze();
   player = { r: 0, c: 0 };
   exit = { r: rows - 1, c: cols - 1 };
+
   resizeCanvas();
   drawMaze();
 }
 
 document.getElementById("generateBtn").onclick = newGame;
-newGame();
 
 
-// ==========================
-// 🕹 조이스틱 입력 처리
-// ==========================
+// =========================
+// 초기 2단계 렌더링 (버그 방지)
+// =========================
+window.onload = () => {
+  resizeCanvas();
+  setTimeout(() => {
+    resizeCanvas();
+    newGame();
+  }, 80);
+};
+
+
+// =========================
+// 🕹 조이스틱
+// =========================
 const joy = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 
 let joyCenter = { x: 0, y: 0 };
 let dragging = false;
 
-function distance(x1,y1,x2,y2){
-  return Math.sqrt((x2-x1)**2 + (y2-y1)**2);
-}
-
 function simulateKey(key){
   const e = new KeyboardEvent("keydown",{key:key});
   document.dispatchEvent(e);
-}
-
-function handleDirection(dx, dy){
-  const min = 20;
-  if(Math.abs(dx) < min && Math.abs(dy) < min) return;
-
-  if(Math.abs(dx) > Math.abs(dy)){
-    if(dx > 0) simulateKey("d");
-    else simulateKey("a");
-  } else {
-    if(dy > 0) simulateKey("s");
-    else simulateKey("w");
-  }
 }
 
 joy.addEventListener("pointerdown", e=>{
@@ -339,13 +330,12 @@ joy.addEventListener("pointerdown", e=>{
 
 document.addEventListener("pointermove", e=>{
   if(!dragging) return;
-
   let dx = e.clientX - joyCenter.x;
   let dy = e.clientY - joyCenter.y;
 
   const maxDist = 40;
   let ang = Math.atan2(dy, dx);
-  let dist = Math.min(maxDist, distance(0,0,dx,dy));
+  let dist = Math.min(maxDist, Math.sqrt(dx*dx + dy*dy));
 
   let sx = Math.cos(ang) * dist;
   let sy = Math.sin(ang) * dist;
@@ -353,7 +343,13 @@ document.addEventListener("pointermove", e=>{
   stick.style.left = `${40 + sx}px`;
   stick.style.top  = `${40 + sy}px`;
 
-  handleDirection(dx, dy);
+  if(Math.abs(dx) > Math.abs(dy)) {
+    if(dx > 10) simulateKey("d");
+    else if(dx < -10) simulateKey("a");
+  } else {
+    if(dy > 10) simulateKey("s");
+    else if(dy < -10) simulateKey("w");
+  }
 });
 
 document.addEventListener("pointerup", ()=>{
