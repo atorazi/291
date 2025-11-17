@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>미로</title>
+<style>
+body {
+  background:#0b1426;
+  color:#eaf2ff;
+  font-family:"Pretendard",sans-serif;
+  text-align:center;
+  padding:20px;
+}
+#mazeCanvas {
+  border:3px solid #1e396e;
+  background:#0a1225;
+  border-radius:8px;
+}
+button {
+  padding:8px 16px;
+  border-radius:8px;
+  border:none;
+  background:#ffd447;
+  color:#1a1300;
+  font-weight:700;
+  cursor:pointer;
+  margin-bottom:15px;
+}
+button:hover{opacity:0.9}
+
+/* === 모바일 조이스틱 === */
+#joystick {
+  position: fixed;
+  bottom: 40px;
+  left: 40px;
+  width: 140px;
+  height: 140px;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  touch-action: none;
+  z-index: 999;
+}
+#stick {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: rgba(255,212,71,0.85);
+  border-radius: 50%;
+  left: 40px;
+  top: 40px;
+  transition: 0.05s;
+  touch-action: none;
+}
+</style>
+</head>
+<body>
+
+<h2>미로</h2>
+<button id="generateBtn">🔄 새로운 미로 생성</button>
+<br>
+<canvas id="mazeCanvas" width="600" height="600"></canvas>
+
+<!-- 모바일 조이스틱 -->
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<script>
+// =========================
+// 전역 변수
+// =========================
+const canvas = document.getElementById("mazeCanvas");
+const ctx = canvas.getContext("2d");
+
+let rows = 25;
+let cols = 25;
+let cellSize = canvas.width / cols;
+
+let grid = [];
+let stack = [];
+let player = { r: 0, c: 0 };
+let exit = { r: rows - 1, c: cols - 1 };
+
+// =========================
+// 셀 생성
+// =========================
+class Cell {
+  constructor(r, c) {
+    this.r = r;
+    this.c = c;
+    this.walls = { top: true, right: true, bottom: true, left: true };
+    this.visited = false;
+  }
+
+  draw() {
+    const x = this.c * cellSize;
+    const y = this.r * cellSize;
+    ctx.strokeStyle = "#eaf2ff";
+    ctx.lineWidth = 2;
+
+    if (this.walls.top)    drawLine(x, y, x + cellSize, y);
+    if (this.walls.right)  drawLine(x + cellSize, y, x + cellSize, y + cellSize);
+    if (this.walls.bottom) drawLine(x, y + cellSize, x + cellSize, y + cellSize);
+    if (this.walls.left)   drawLine(x, y, x, y + cellSize);
+  }
+}
+
+function drawLine(x1,y1,x2,y2){
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+}
+
+// =========================
+// DFS 미로 생성기
+// =========================
+function generateMaze() {
+  grid = [];
+  stack = [];
+
+  for (let r = 0; r < rows; r++) {
+    let row = [];
+    for (let c = 0; c < cols; c++) {
+      row.push(new Cell(r, c));
+    }
+    grid.push(row);
+  }
+
+  let current = grid[0][0];
+  current.visited = true;
+  stack.push(current);
+
+  while (stack.length > 0) {
+    let next = checkNeighbors(current);
+
+    if (next) {
+      next.visited = true;
+      stack.push(current);
+      removeWalls(current, next);
+      current = next;
+    } else {
+      current = stack.pop();
+    }
+  }
+}
+
+function checkNeighbors(cell) {
+  let { r, c } = cell;
+  let neighbors = [];
+
+  if (r > 0 && !grid[r - 1][c].visited) neighbors.push(grid[r - 1][c]);
+  if (c < cols - 1 && !grid[r][c + 1].visited) neighbors.push(grid[r][c + 1]);
+  if (r < rows - 1 && !grid[r + 1][c].visited) neighbors.push(grid[r + 1][c]);
+  if (c > 0 && !grid[r][c - 1].visited) neighbors.push(grid[r][c - 1]);
+
+  if (neighbors.length === 0) return undefined;
+  return neighbors[Math.floor(Math.random() * neighbors.length)];
+}
+
+function removeWalls(a, b) {
+  let dx = a.c - b.c;
+  let dy = a.r - b.r;
+
+  if (dx === 1) { a.walls.left = false; b.walls.right = false; }
+  else if (dx === -1) { a.walls.right = false; b.walls.left = false; }
+
+  if (dy === 1) { a.walls.top = false; b.walls.bottom = false; }
+  else if (dy === -1) { a.walls.bottom = false; b.walls.top = false; }
+}
+
+// =========================
+// 미로 그리기
+// =========================
+function drawMaze() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  grid.forEach(row => row.forEach(cell => cell.draw()));
+
+  // 플레이어
+  drawCircle(player.c * cellSize + cellSize/2,
+             player.r * cellSize + cellSize/2,
+             cellSize/3,
+             "#68c3ff");
+
+  // 출구
+  drawCircle(exit.c * cellSize + cellSize/2,
+             exit.r * cellSize + cellSize/2,
+             cellSize/3,
+             "#ffd447");
+}
+
+function drawCircle(x,y,r,color){
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+// =========================
+// 이동 처리 (WASD + 조이스틱 이벤트)
+// =========================
+document.addEventListener("keydown", (e) => {
+  let cell = grid[player.r][player.c];
+  
+  if ((e.key === "w" || e.key === "W") && !cell.walls.top) player.r--;
+  if ((e.key === "s" || e.key === "S") && !cell.walls.bottom) player.r++;
+  if ((e.key === "a" || e.key === "A") && !cell.walls.left) player.c--;
+  if ((e.key === "d" || e.key === "D") && !cell.walls.right) player.c++;
+
+  drawMaze();
+  checkWin();
+});
+
+// =========================
+// 승리 체크
+// =========================
+function checkWin() {
+  if (player.r === exit.r && player.c === exit.c) {
+    setTimeout(() => {
+      alert("🎉 미궁 탈출 성공!");
+    }, 20);
+  }
+}
+
+// =========================
+// 초기 실행
+// =========================
+function newGame() {
+  generateMaze();
+  player = { r: 0, c: 0 };
+  exit = { r: rows - 1, c: cols - 1 };
+  drawMaze();
+}
+
+document.getElementById("generateBtn").onclick = newGame;
+newGame();
+
+// ==========================
+// 🕹 조이스틱 입력 처리
+// ==========================
+const joy = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+
+let joyCenter = { x: 0, y: 0 };
+let dragging = false;
+
+function distance(x1,y1,x2,y2){
+  return Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+}
+
+function simulateKey(key){
+  const e = new KeyboardEvent("keydown",{key:key});
+  document.dispatchEvent(e);
+}
+
+function handleDirection(dx, dy){
+  const min = 20; // 최소 드래그 거리
+  if(Math.abs(dx) < min && Math.abs(dy) < min) return;
+
+  if(Math.abs(dx) > Math.abs(dy)){
+    if(dx > 0) simulateKey("d");
+    else simulateKey("a");
+  } else {
+    if(dy > 0) simulateKey("s");
+    else simulateKey("w");
+  }
+}
+
+// 드래그 시작
+joy.addEventListener("pointerdown", e=>{
+  dragging = true;
+  joyCenter = {
+    x: joy.offsetLeft + joy.offsetWidth/2,
+    y: joy.offsetTop + joy.offsetHeight/2
+  };
+});
+
+// 드래그 중
+document.addEventListener("pointermove", e=>{
+  if(!dragging) return;
+
+  let dx = e.clientX - joyCenter.x;
+  let dy = e.clientY - joyCenter.y;
+
+  const maxDist = 40;
+  let ang = Math.atan2(dy, dx);
+  let dist = Math.min(maxDist, distance(0,0,dx,dy));
+
+  let sx = Math.cos(ang) * dist;
+  let sy = Math.sin(ang) * dist;
+
+  stick.style.left = `${40 + sx}px`;
+  stick.style.top  = `${40 + sy}px`;
+
+  handleDirection(dx, dy);
+});
+
+// 드래그 종료
+document.addEventListener("pointerup", e=>{
+  dragging = false;
+  stick.style.left = "40px";
+  stick.style.top  = "40px";
+});
+</script>
+</body>
+</html>
