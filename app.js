@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 탭 버튼 이벤트 연결 (🎨 ANSI 탭 추가)
-  ["Home","Ansi","Sim","Exp","Enhance","Growth"].forEach(name => {
+  ["Home","Ansi","Sim","Exp","Enhance","Growth","Maze"].forEach(name => {
     const btn = document.getElementById("tab" + name);
     if (btn) {
       btn.addEventListener("click", () => showTab(name.toLowerCase() + "Tab"));
@@ -433,4 +433,5 @@ async function initGrowthCalculator() {
       </table>`;
   };
 }
+
 
