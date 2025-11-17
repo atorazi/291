@@ -7,7 +7,7 @@ SPDX-License-Identifier: MIT
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta-name="viewport" content="width=device-width,initial-scale=1">
   <title>🐂 미궁 시뮬레이터</title>
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -148,27 +148,25 @@ SPDX-License-Identifier: MIT
         <div id="growthResult" class="growth-table"></div>
       </section>
 
+      <!-- ⭐ 미로 게임 -->
       <section id="mazeTab" class="tab-content">
         <h2>🌀 랜덤 미로 게임</h2>
 
         <iframe 
           src="./maze.html"
+          id="mazeFrame"
           style="
             width:100%;
-            height: calc(100vh - 250px);
             border:none;
             border-radius:12px;
             background:#000;
           ">
         </iframe>
 
-
         <p style="font-size:12px; opacity:0.7; margin-top:6px;">
           WASD 또는 모바일 방향키로 이동할 수 있습니다.
         </p>
       </section>
-
-
     </main>
   </div>
 
@@ -182,16 +180,28 @@ SPDX-License-Identifier: MIT
 <!-- 원래 사용하던 app.js 유지 -->
 <script src="./app.js"></script>
 
+<!-- ⭐ 미로 높이 자동 조절 -->
 <script>
-  window.addEventListener("resize", () => {
-    const frame = document.querySelector("#mazeTab iframe");
-    if (frame) {
-      frame.style.height = `calc(100vh - 180px)`;
-    }
-  });
+function fitMazeHeight() {
+  const frame = document.getElementById("mazeFrame");
+  if (!frame) return;
+
+  const top = frame.getBoundingClientRect().top;
+  const footer = 90; 
+  const newH = window.innerHeight - top - footer - 10;
+
+  frame.style.height = `${newH}px`;
+}
+
+window.addEventListener("resize", fitMazeHeight);
+window.addEventListener("load", fitMazeHeight);
+
+document.getElementById("tabMaze").addEventListener("click", () => {
+  setTimeout(fitMazeHeight, 120);
+});
 </script>
 
-<!-- ⭐ 탭 스크립트 추가 -->
+<!-- ⭐ 탭 스크립트 -->
 <script>
   const tabs = {
     tabHome:"homeTab",
@@ -212,6 +222,10 @@ SPDX-License-Identifier: MIT
 
       document.getElementById(tabs[key]).classList.add("active");
       btn.classList.add("active");
+
+      if (key === "tabMaze") {
+        setTimeout(fitMazeHeight, 120);
+      }
     });
   });
 </script>
