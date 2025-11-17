@@ -16,56 +16,6 @@ html, body {
   text-align: center;
 }
 
-/* 캔버스 (상시 화면 크기 유지) */
-#mazeCanvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border: 3px solid #1e396e;
-  background: #0a1225;
-  border-radius: 8px;
-}
-
-/* 새 미로 생성 버튼 (하단 중앙 고정) */
-#generateBtn {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
-  background: #ffd447;
-  color: #1a1300;
-  font-weight: 700;
-  z-index: 999;
-}
-
-/* 모바일 조이스틱 */
-#joystick {
-  position: fixed;
-  bottom: 90px; /* 버튼과 엇갈리지 않게 */
-  left: 30px;
-  width: 140px;
-  height: 140px;
-  background: rgba(255,255,255,0.07);
-  border: 2px solid rgba(255,255,255,0.15);
-  border-radius: 50%;
-  touch-action: none;
-  z-index: 999;
-}
-#stick {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  background: rgba(255,212,71,0.85);
-  border-radius: 50%;
-  left: 40px;
-  top: 40px;
-  transition: 0.05s;
-  touch-action: none;
-}
-
 /* 메인 컨테이너 */
 .game-box {
   width: 100%;
@@ -87,13 +37,13 @@ html, body {
   gap: 12px;
   z-index: 50;
 }
-
 .header h1 {
   margin: 0;
   font-size: 20px;
   color: #ffd447;
 }
 
+/* 새 미로 버튼 */
 #generateBtn {
   padding: 6px 14px;
   border-radius: 8px;
@@ -102,18 +52,28 @@ html, body {
   color: #1a1300;
   font-weight: 700;
   cursor: pointer;
+  z-index: 999;
 }
 #generateBtn:hover { opacity: 0.9; }
 
-/* 미로 캔버스 */
+/* 캔버스 */
 #mazeCanvas {
   width: 100%;
   height: auto;
+  display: block;
   background: #0a1225;
   border-radius: 8px;
+  border: 3px solid #1e396e;
 }
 
-/* 조이스틱 */
+/* 안내 텍스트 */
+.guide {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #9aa7c3;
+}
+
+/* 모바일 조이스틱 */
 #joystick {
   position: fixed;
   bottom: 70px;
@@ -137,13 +97,6 @@ html, body {
   transition: 0.05s;
   touch-action: none;
 }
-
-/* 안내 텍스트 */
-.guide {
-  margin-top: 14px;
-  font-size: 12px;
-  color: #9aa7c3;
-}
 </style>
 </head>
 
@@ -157,15 +110,11 @@ html, body {
   </div>
 
   <canvas id="mazeCanvas"></canvas>
+  <div class="guide">WASD / 방향키 / 모바일 조이스틱 지원</div>
 
-  <div class="guide">
-    WASD / 방향키 / 모바일 조이스틱 지원
-  </div>
 </div>
 
-<!-- 모바일 조이스틱 -->
 <div id="joystick"><div id="stick"></div></div>
-
 
 <script>
 const canvas = document.getElementById("mazeCanvas");
@@ -180,17 +129,22 @@ let stack = [];
 let player = { r: 0, c: 0 };
 let exit = { r: rows - 1, c: cols - 1 };
 
-// 캔버스 자동 높이 계산
+/*------------------------------
+  캔버스 자동 리사이즈
+------------------------------*/
 function resizeCanvas() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  // 화면 가로 기준
+  const w = canvas.clientWidth;
 
-  // 캔버스 화면 전체
+  // 미로는 정사각형이어야 하므로 height도 w로
   canvas.width = w;
-  canvas.height = h;
+  canvas.height = w;
 
-  // 화면 비율 유지한 cellSize 계산
-  cellSize = Math.floor(Math.min(w / cols, h / rows));
+  // cellSize 계산 (정확히 w 안에 rows가 딱 들어가도록)
+  cellSize = Math.floor(w / cols);
+
+  // 캔버스 실제 드로잉 사이즈는 cellSize × rows로 강제 세팅
+  canvas.height = cellSize * rows;
 
   drawMaze();
 }
@@ -198,7 +152,9 @@ function resizeCanvas() {
 
 window.addEventListener("resize", resizeCanvas);
 
-// 셀 생성
+/*------------------------------
+      셀 클래스
+------------------------------*/
 class Cell {
   constructor(r, c) {
     this.r = r;
@@ -228,7 +184,9 @@ function drawLine(x1,y1,x2,y2){
   ctx.stroke();
 }
 
-// 미로 생성
+/*------------------------------
+      미로 생성
+------------------------------*/
 function generateMaze() {
   grid = [];
   stack = [];
@@ -279,7 +237,9 @@ function removeWalls(a, b) {
   if (dy === -1) { a.walls.bottom = false; b.walls.top = false; }
 }
 
-// 그리기
+/*------------------------------
+      미로 그리기
+------------------------------*/
 function drawMaze() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -296,7 +256,9 @@ function drawCircle(x,y,r,color){
   ctx.fill();
 }
 
-// 이동
+/*------------------------------
+      이동 입력
+------------------------------*/
 document.addEventListener("keydown", (e)=>{
   let cell = grid[player.r][player.c];
 
@@ -315,7 +277,9 @@ function checkWin(){
   }
 }
 
-// 초기화
+/*------------------------------
+      새 게임
+------------------------------*/
 function newGame(){
   generateMaze();
   player = { r:0, c:0 };
@@ -325,7 +289,9 @@ function newGame(){
 
 document.getElementById("generateBtn").onclick = newGame;
 
-// 조이스틱
+/*------------------------------
+      모바일 조이스틱
+------------------------------*/
 const joy = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 
@@ -375,8 +341,11 @@ document.addEventListener("pointerup", ()=>{
   stick.style.top="40px";
 });
 
-// 실행
+/*------------------------------
+      실행
+------------------------------*/
 setTimeout(()=> newGame(), 100);
+
 </script>
 
 </body>
