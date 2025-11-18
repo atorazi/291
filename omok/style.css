@@ -94,23 +94,29 @@ h1 {
 =========================================== */
 .point {
     position: absolute;
-    width: calc(100% / 15);
-    height: calc(100% / 15);
+    width: 20px;      /* 클릭 가능한 점 크기 */
+    height: 20px;
     transform: translate(-50%, -50%);
     cursor: pointer;
 }
 
+
 /* ===========================================
    돌
 =========================================== */
+:root {
+    --stone-size: calc(100% / 15 * 0.82);
+}
+
 .stone {
     position: absolute;
-    width: calc(100% / 15 * 0.82);
-    height: calc(100% / 15 * 0.82);
+    width: var(--stone-size);
+    height: var(--stone-size);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     box-shadow: 0 0 6px rgba(0,0,0,0.5);
 }
+
 
 .stone.black {
     background: radial-gradient(circle at 30% 30%, #444, #000);
