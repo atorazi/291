@@ -398,105 +398,6 @@ function findWinningMove(color) {
 }
 
 /* ============================================================
-   강제 4
-============================================================ */
-function findForceMove(color) {
-    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-    let best = null, bestScore = 0;
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
-            if (board[y][x] !== EMPTY) continue;
-            if (color === BLACK && isForbidden(board, x, y)) continue;
-
-            let score = 0;
-            for (const [dx, dy] of dirs) {
-                let c = countSeq(board, x, y, dx, dy, color);
-                if (c === 4) score += 100000;
-                else if (c === 3) score += 800;
-            }
-
-            if (score > bestScore) {
-                bestScore = score;
-                best = { x, y };
-            }
-        }
-    }
-
-    return best;
-}
-
-/* ============================================================
-   더블 쓰레트 (C만)
-============================================================ */
-function findDoubleThreat(color) {
-    let best = null, bestCnt = 0;
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
-            if (board[y][x] !== EMPTY) continue;
-            if (color === BLACK && isForbidden(board, x, y)) continue;
-
-            board[y][x] = color;
-            let f = findForceMove(color);
-            let cnt = f ? 1 : 0;
-            board[y][x] = EMPTY;
-
-            if (cnt > bestCnt) {
-                bestCnt = cnt;
-                best = { x, y };
-            }
-        }
-    }
-
-    return best;
-}
-
-/* ============================================================
-   전략 배치
-============================================================ */
-function chooseStrategicMove(hard) {
-    let best = null, bestScore = -999999;
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
-            if (board[y][x] !== EMPTY) continue;
-            if (aiColor === BLACK && isForbidden(board, x, y)) continue;
-
-            let score = 0;
-
-            // 중심 가중치
-            const dist = Math.abs(x - 7) + Math.abs(y - 7);
-            score += (hard ? 30 : 18) - dist;
-
-            // 주변 영향
-            for (let dy = -2; dy <= 2; dy++) {
-                for (let dx = -2; dx <= 2; dx++) {
-                    let nx = x + dx, ny = y + dy;
-                    if (!isIn(nx, ny)) continue;
-
-                    if (board[ny][nx] === aiColor)
-                        score += (hard ? 14 : 10);
-
-                    if (board[ny][nx] === humanColor)
-                        score += (hard ? 11 : 7);
-                }
-            }
-
-            if (score > bestScore) {
-                bestScore = score;
-                best = { x, y };
-            }
-        }
-    }
-
-    return best;
-}
-
-/* ============================================================
    승리 판정
 ============================================================ */
 function checkWin(color) {
@@ -637,6 +538,7 @@ window.onload = () => {
     document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
     startGame();
 };
+
 
 
 
