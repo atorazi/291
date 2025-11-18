@@ -104,18 +104,14 @@ h1 {
 /* ===========================================
    돌
 =========================================== */
-:root {
-    --stone-size: calc(100% / 15 * 0.82);
+.point {
+    position: absolute;
+    width: 22px;     /* 정확한 클릭 영역 */
+    height: 22px;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
 }
 
-.stone {
-    position: absolute;
-    width: var(--stone-size);
-    height: var(--stone-size);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 6px rgba(0,0,0,0.5);
-}
 
 
 .stone.black {
