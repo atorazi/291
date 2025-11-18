@@ -137,6 +137,7 @@ function onHumanClick(e) {
     if (turn === BLACK && isForbidden(board, x, y)) {
         setStatus("⚠ 금수 자리입니다!");
         return;
+       
     }
 
     placeStone(x, y, humanColor);
@@ -195,7 +196,8 @@ async function aiStartMove() {
     const diff = document.querySelector("input[name=difficulty]:checked").value;
 
     // normal = B, hard = C
-    let mv = (diff === "normal") ? aiMove_B() : aiMove_C();
+    let mv = aiMoveHybrid();
+
 
     if (!mv) return;
 
@@ -635,5 +637,6 @@ window.onload = () => {
     document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
     startGame();
 };
+
 
 
