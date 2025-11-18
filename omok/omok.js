@@ -272,9 +272,239 @@ function aiMove_C() {
 }
 
 /* ============================================================
-   AI 판단 유틸 (findWinningMove / findForceMove 등)
+   승리 수 탐색
 ============================================================ */
-/* ... (너무 길어 생략 가능하지만 필요하면 전체 제공 가능) */
+function findWinningMove(color) {
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+
+            if (board[y][x] !== EMPTY) continue;
+            if (color === BLACK && isForbidden(board, x, y)) continue;
+
+            board[y][x] = color;
+            let win = checkWin(color);
+            board[y][x] = EMPTY;
+
+            if (win) return { x, y };
+        }
+    }
+    return null;
+}
+
+/* ============================================================
+   강제 4
+============================================================ */
+function findForceMove(color) {
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let best = null;
+    let bestScore = 0;
+
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+
+            if (board[y][x] !== EMPTY) continue;
+            if (color === BLACK && isForbidden(board, x, y)) continue;
+
+            let score = 0;
+
+            for (const [dx, dy] of dirs) {
+                let c = countSeq(board, x, y, dx, dy, color);
+                if (c === 4) score += 100000;
+                else if (c === 3) score += 800;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = { x, y };
+            }
+        }
+    }
+    return best;
+}
+
+/* ============================================================
+   더블 쓰레트 (C 난이도)
+============================================================ */
+function findDoubleThreat(color) {
+    let bestMove = null;
+    let bestCount = 0;
+
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+
+            if (board[y][x] !== EMPTY) continue;
+            if (color === BLACK && isForbidden(board, x, y)) continue;
+
+            board[y][x] = color;
+            let f = findForceMove(color);
+            let cnt = f ? 1 : 0;
+            board[y][x] = EMPTY;
+
+            if (cnt > bestCount) {
+                bestCount = cnt;
+                bestMove = { x, y };
+            }
+        }
+    }
+    return bestMove;
+}
+
+/* ============================================================
+   전략적 위치 선택
+============================================================ */
+function chooseStrategicMove(hardMode) {
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+            if (board[y][x] !== EMPTY) continue;
+            if (aiColor === BLACK && isForbidden(board, x, y)) continue;
+
+            let score = 0;
+
+            // 중심 가중치
+            const dist = Math.abs(x - 7) + Math.abs(y - 7);
+            score += (hardMode ? 30 : 18) - dist;
+
+            // 주변 영향
+            for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    let nx = x + dx, ny = y + dy;
+                    if (!isIn(nx, ny)) continue;
+
+                    if (board[ny][nx] === aiColor)    score += (hardMode ? 14 : 10);
+                    if (board[ny][nx] === humanColor) score += (hardMode ? 11 : 7);
+                }
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = { x, y };
+            }
+        }
+    }
+    return best;
+}
+
+/* ============================================================
+   승리 판정
+============================================================ */
+function checkWin(color) {
+    const dirs = [
+        [1, 0],   // →
+        [0, 1],   // ↓
+        [1, 1],   // ↘
+        [1, -1]   // ↗
+    ];
+
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+            if (board[y][x] !== color) continue;
+
+            for (const [dx, dy] of dirs) {
+                let count = 1;
+
+                // 정방향
+                let nx = x + dx, ny = y + dy;
+                while (isIn(nx, ny) && board[ny][nx] === color) {
+                    count++;
+                    nx += dx;
+                    ny += dy;
+                }
+
+                // 역방향
+                nx = x - dx; ny = y - dy;
+                while (isIn(nx, ny) && board[ny][nx] === color) {
+                    count++;
+                    nx -= dx;
+                    ny -= dy;
+                }
+
+                if (count >= 5) return true;
+            }
+        }
+    }
+    return false;
+}
+
+/* ============================================================
+   연속 돌 개수 세기
+============================================================ */
+function countSeq(bd, x, y, dx, dy, color) {
+    let cnt = 1;
+
+    // 정방향
+    let nx = x + dx, ny = y + dy;
+    while (isIn(nx, ny) && bd[ny][nx] === color) {
+        cnt++;
+        nx += dx;
+        ny += dy;
+    }
+
+    // 역방향
+    nx = x - dx; ny = y - dy;
+    while (isIn(nx, ny) && bd[ny][nx] === color) {
+        cnt++;
+        nx -= dx;
+        ny -= dy;
+    }
+
+    return cnt;
+}
+
+/* ============================================================
+   장목(6목↑) 검사
+============================================================ */
+function isOverline(bd, x, y) {
+    return (
+        countSeq(bd, x, y, 1, 0, BLACK) >= 6 ||
+        countSeq(bd, x, y, 0, 1, BLACK) >= 6 ||
+        countSeq(bd, x, y, 1, 1, BLACK) >= 6 ||
+        countSeq(bd, x, y, 1, -1, BLACK) >= 6
+    );
+}
+
+/* ============================================================
+   패턴 검사 유틸
+============================================================ */
+function countPattern(bd, x, y, pattern) {
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let count = 0;
+
+    for (const [dx, dy] of dirs) {
+        let line = "";
+
+        for (let k = -4; k <= 4; k++) {
+            let nx = x + dx * k;
+            let ny = y + dy * k;
+
+            if (!isIn(nx, ny)) {
+                line += "3"; // 보드 범위 밖
+            } else {
+                line += (
+                    bd[ny][nx] === BLACK ? "1" :
+                    bd[ny][nx] === WHITE ? "2" : "0"
+                );
+            }
+        }
+
+        if (line.includes(pattern)) count++;
+    }
+    return count;
+}
+
+/* ============================================================
+   열린 3 / 열린 4
+============================================================ */
+function countOpenThree(bd, x, y) {
+    return countPattern(bd, x, y, "01110");
+}
+
+function countOpenFour(bd, x, y) {
+    return countPattern(bd, x, y, "011110");
+}
+
 
 /* ============================================================
    금수 룰
@@ -309,3 +539,4 @@ window.onload = () => {
     document.getElementById("resetBtn").onclick = startGame;
     startGame();
 };
+
