@@ -1,121 +1,134 @@
-:root {
-    --stone-size: 100px; 
-/* ===============================
-   전체 레이아웃 / 폰트
-================================ */
 body {
-    margin: 0;
-    padding: 0;
-    background: #0b1220;
-    font-family: "Pretendard", sans-serif;
-    color: #fff;
+  margin: 0;
+  padding: 0;
+  background: #0b1220;
+  font-family: "Pretendard", sans-serif;
+  color: #fff;
+  text-align: center;
 }
 
-/* 상단 옵션 바 */
-.top-bar {
-    margin: 20px;
+h1 {
+  margin-top: 20px;
+  color: #ffd447;
 }
 
-/* 상태 메시지 */
+.option-bar {
+  margin: 15px auto;
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.option-bar label {
+  cursor: pointer;
+  font-size: 15px;
+}
+
+#resetBtn {
+  background: #ffd447;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: #111;
+  cursor: pointer;
+  font-weight: bold;
+}
+
 #statusBox {
-    margin: 10px 20px;
-    padding: 8px 14px;
-    background: #0f1e3a;
-    border-radius: 6px;
-    font-size: 16px;
+  margin: 10px auto;
+  background: #11234a;
+  border-left: 6px solid #ffd447;
+  padding: 10px;
+  width: min(90%, 600px);
+  border-radius: 8px;
+  text-align: left;
 }
-
 
 /* ===============================
-   보드 영역
+   📌 반응형 오목판
 ================================ */
+#boardContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
 
 #boardWrapper {
-    margin: 0 auto;
-    width: 750px;   /* 15칸 → 14칸 × 50px */
-    height: 750px;
-    position: relative;
+  position: relative;
+  width: min(95vw, 600px);
+  height: min(95vw, 600px);
 }
 
-/* 바둑판 실제 영역 */
-.board {
-    width: 750px;
-    height: 750px;
-    position: relative;
+/* 오목 보드 */
+#board {
+  width: 100%;
+  height: 100%;
+  background: #b67a3d;
+  border: 10px solid #dba56a;
+  border-radius: 8px;
+  box-sizing: border-box;
 
-    background: #b67a3d;
-    border: 12px solid #dba56a;
-    box-sizing: border-box;
-
-    /* 바둑판 격자 그리기 */
-    background-image:
-        linear-gradient(#000 2px, transparent 2px),
-        linear-gradient(90deg, #000 2px, transparent 2px);
-
-    background-size: 50px 50px; /* cell과 동일하게 유지 */
-    background-position: 0 0;
+  background-image:
+    linear-gradient(#000 2px, transparent 2px),
+    linear-gradient(to right, #000 2px, transparent 2px);
+  background-size: calc(100% / 15) calc(100% / 15);
 }
 
-
-/* ===============================
-   클릭 포인트(교차점)
-================================ */
+/* 착수 포인트 */
 .point {
-    width: 22px;
-    height: 22px;
-    position: absolute;
-
-    /* 교차점 중앙에 위치하도록 이동 */
-    transform: translate(-50%, -50%);
-
-    cursor: pointer;
+  position: absolute;
+  width: calc(100% / 15);
+  height: calc(100% / 15);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
 }
 
-
-/* ===============================
-   돌 렌더링
-================================ */
+/* 돌 */
 .stone {
-    width: var(--stone-size);
-    height: var(--stone-size);
-    position: absolute;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  position: absolute;
+  width: calc(100% / 15 * 0.85);
+  height: calc(100% / 15 * 0.85);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px rgba(0,0,0,0.5);
 }
 
-    transform: translate(-50%, -50%);
+.stone.black { background: radial-gradient(circle at 30% 30%, #444, #000); }
+.stone.white { background: radial-gradient(circle at 30% 30%, #fff, #ccc); }
 
-    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
-}
-
-/* 돌 색상 */
-.stone.black {
-    background: radial-gradient(circle at 30% 30%, #444, #000);
-}
-
-.stone.white {
-    background: radial-gradient(circle at 30% 30%, #fff, #ccc);
-}
-
-
-/* ===============================
-   금수 표시 B
-================================ */
+/* 금수 */
 .ban {
-    width: 20px;
-    height: 20px;
-    position: absolute;
+  position: absolute;
+  width: calc(100% / 15 * 0.6);
+  height: calc(100% / 15 * 0.6);
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  font-size: calc(100% / 15 * 0.4);
+  text-align: center;
+  line-height: calc(100% / 15 * 0.6);
+  color: red;
+  pointer-events: none;
+}
 
-    transform: translate(-50%, -50%);
-    text-align: center;
-    line-height: 20px;
+/* ★ hover 미리보기(ghost stone) */
+#ghostStone {
+  position: absolute;
+  width: calc(100% / 15 * 0.85);
+  height: calc(100% / 15 * 0.85);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 20;
+}
 
-    font-size: 13px;
-    font-weight: bold;
-    color: red;
+#ghostStone.black { background: rgba(0,0,0,0.4); }
+#ghostStone.white { background: rgba(255,255,255,0.5); }
 
-    background: rgba(255,255,255,0.65);
-    border-radius: 4px;
-    pointer-events: none;
+#ghostStone.forbidden {
+  background: transparent;
+  border: 3px solid red;
 }
