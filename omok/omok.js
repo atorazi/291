@@ -165,6 +165,9 @@ function placeStone(x, y, color) {
    게임 시작
 ============================================================ */
 function startGame() {
+    // ⭐ 돌 크기 적용 (여기에 넣는 게 가장 깔끔함)
+    document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
+
     resetBoardUI();
     initBoard();
     createBoardUI();
@@ -181,6 +184,7 @@ function startGame() {
 
     if (first === "ai") aiStartMove();
 }
+
 
 /* ============================================================
    AI 착수
@@ -539,4 +543,5 @@ window.onload = () => {
     document.getElementById("resetBtn").onclick = startGame;
     startGame();
 };
+
 
