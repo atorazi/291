@@ -2,7 +2,7 @@
    오목 AI (렌주룰) – 완성형 하이브리드 AI
 ============================================================ */
 
-const SIZE = 15;
+const SIZE = 14;
 const EMPTY = 0;
 const BLACK = 1;
 const WHITE = 2;
@@ -468,3 +468,4 @@ window.onload = () => {
     document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
     startGame();
 };
+
