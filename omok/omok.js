@@ -233,44 +233,146 @@ function findNonForbiddenMove() {
 }
 
 /* ============================================================
-   AI 로직 (B / C)
+   하이브리드 AI — 승리수 + 금수 + 패턴 기반
 ============================================================ */
-function aiMove_B() {
-    let win = findWinningMove(aiColor);
+
+function aiMoveHybrid() {
+    const me = aiColor;
+    const opp = humanColor;
+
+    /* 1) 즉발 승리수 */
+    let win = findWinningMove(me);
     if (win) return win;
 
-    let block = findWinningMove(humanColor);
+    /* 2) 즉발 차단 */
+    let block = findWinningMove(opp);
     if (block) return block;
 
-    let f = findForceMove(aiColor);
-    if (f) return f;
+    /* 3) 강한 위협 탐색 (4 생성) */
+    let force = findBestForceMove(me);
+    if (force) return force;
 
-    let fb = findForceMove(humanColor);
-    if (fb) return fb;
+    let forceBlock = findBestForceMove(opp);
+    if (forceBlock) return forceBlock;
 
-    return chooseStrategicMove(false);
+    /* 4) 패턴 기반 점수 시스템으로 전체 평가 */
+    return evaluateBestMove(me, opp);
 }
 
-function aiMove_C() {
-    let win = findWinningMove(aiColor);
-    if (win) return win;
+/* ============================================================
+   강제 4 탐색 강화
+============================================================ */
+function findBestForceMove(color) {
+    let best = null;
+    let bestScore = 0;
 
-    let block = findWinningMove(humanColor);
-    if (block) return block;
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
 
-    let dual = findDoubleThreat(aiColor);
-    if (dual) return dual;
+            if (board[y][x] !== EMPTY) continue;
+            if (color === BLACK && isForbidden(board, x, y)) continue;
 
-    let dualBlock = findDoubleThreat(humanColor);
-    if (dualBlock) return dualBlock;
+            board[y][x] = color;
+            let c = countForcePatterns(board, x, y, color);
+            board[y][x] = EMPTY;
 
-    let f = findForceMove(aiColor);
-    if (f) return f;
+            if (c > bestScore) {
+                bestScore = c;
+                best = { x, y };
+            }
+        }
+    }
+    return best;
+}
 
-    let fb = findForceMove(humanColor);
-    if (fb) return fb;
+function countForcePatterns(bd, x, y, color) {
+    let score = 0;
 
-    return chooseStrategicMove(true);
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+
+    for (const [dx, dy] of dirs) {
+        let c = countSeq(bd, x, y, dx, dy, color);
+
+        if (c === 4) score += 200000;   // 승에 가까움
+        if (c === 3) score += 3500;
+        if (c === 2) score += 40;
+    }
+
+    return score;
+}
+
+/* ============================================================
+   패턴 평가 기반 최종 선택
+============================================================ */
+function evaluateBestMove(me, opp) {
+    let best = null;
+    let bestScore = -999999;
+
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+
+            if (board[y][x] !== EMPTY) continue;
+            if (me === BLACK && isForbidden(board, x, y)) continue;
+
+            // 후보: 주변 2칸 안에 돌 있어야만 탐색
+            if (!hasNearbyStone(x, y)) continue;
+
+            board[y][x] = me;
+
+            let score = 0;
+
+            /* 공격 패턴 */
+            score += evaluatePatterns(x, y, me) * 1.2;
+
+            /* 수비 패턴 */
+            board[y][x] = opp;
+            score += evaluatePatterns(x, y, opp) * 1.0;
+
+            board[y][x] = me;
+
+            /* 중심 보정 */
+            score += (14 - (Math.abs(x-7)+Math.abs(y-7))) * 4;
+
+            board[y][x] = EMPTY;
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = { x, y };
+            }
+        }
+    }
+
+    return best;
+}
+
+function hasNearbyStone(x, y) {
+    for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (!isIn(nx, ny)) continue;
+            if (board[ny][nx] !== EMPTY) return true;
+        }
+    }
+    return false;
+}
+
+/* ============================================================
+   패턴 세기
+============================================================ */
+function evaluatePatterns(x, y, color) {
+    let score = 0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+
+    for (const [dx, dy] of dirs) {
+        const c = countSeq(board, x, y, dx, dy, color);
+
+        if (c >= 4) score += 200000;       // 4 완성
+        else if (c === 3) score += 2800;   // 열린3 가능성
+        else if (c === 2) score += 90;
+    }
+
+    return score;
 }
 
 /* ============================================================
@@ -533,4 +635,5 @@ window.onload = () => {
     document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
     startGame();
 };
+
 
