@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>오목 AI (렌주룰)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- 스타일 -->
+  <link rel="stylesheet" href="style.css">
+
+  <script defer src="omok.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <h1>오목 AI (렌주룰)</h1>
+    <p class="sub">정식 렌주룰: 3·3 / 4·4 / 장목(6목↑) 금지 — 금수는 B로 표시됩니다.</p>
+
+    <!-- 옵션 -->
+    <div class="top-bar">
+
+      <!-- 난이도 -->
+      <div class="group">
+        <div class="label">난이도</div>
+        <div class="pill-group">
+          <label>
+            <input type="radio" name="difficulty" value="normal" checked>
+            <span>보통</span>
+          </label>
+          <label>
+            <input type="radio" name="difficulty" value="hard">
+            <span>어려움</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 선후공 -->
+      <div class="group">
+        <div class="label">선공(흑)</div>
+        <div class="pill-group">
+          <label>
+            <input type="radio" name="firstPlayer" value="human-black" checked>
+            <span>사람</span>
+          </label>
+          <label>
+            <input type="radio" name="firstPlayer" value="ai-black">
+            <span>AI</span>
+          </label>
+        </div>
+      </div>
+
+      <button id="resetBtn">새 게임</button>
+    </div>
+
+    <!-- 상태창 -->
+    <div class="status">
+      <div class="status-main" id="statusText">당신 차례입니다. (흑 ●)</div>
+      <div class="legend">
+        <span><span class="stone-sample stone-black"></span> 흑</span>
+        <span><span class="stone-sample stone-white"></span> 백</span>
+        <span><span class="b-sample">B</span> 금수 자리</span>
+      </div>
+    </div>
+
+    <!-- 오목판 -->
+    <div class="board-wrapper">
+      <table id="board"></table>
+    </div>
+
+    <div class="hint">※ 렌주룰: 흑 3-3 금지, 4-4 금지, 장목 금지(6목↑)</div>
+  </div>
+</body>
+</html>
