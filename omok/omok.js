@@ -541,7 +541,13 @@ function setStatus(msg) {
 ============================================================ */
 window.onload = () => {
     document.getElementById("resetBtn").onclick = startGame;
+
+    // ⭐ 여기도 완벽한 위치!
+    document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
+
     startGame();
 };
+
+
 
 
