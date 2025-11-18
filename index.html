@@ -14,7 +14,7 @@ SPDX-License-Identifier: MIT
 
 <body>
   <div class="container">
-    
+
     <!-- 📂 왼쪽 탭 -->
     <nav class="sidebar">
       <button id="tabHome" class="active">🏠 홈</button>
@@ -23,23 +23,38 @@ SPDX-License-Identifier: MIT
       <button id="tabExp">📘 경험치 계산기</button>
       <button id="tabEnhance">🪄 강화 시뮬레이터</button>
       <button id="tabGrowth">📊 성장률 계산기</button>
-      <button id="tabOmok">⚫ 오목 AI</button>
+
+      <!-- 🔥 오목은 독립 페이지로 이동 -->
+      <button onclick="window.location.href='./omok.html'">⚫ 오목 AI</button>
     </nav>
 
-    <!-- 📈 오른쪽 콘텐츠 -->
+    <!-- 📈 오른쪽 content -->
     <main class="content">
 
-      <!-- 🏠 홈 -->
+      <!-- 🏠 홈 탭 -->
       <section id="homeTab" class="tab-content active">
         <h2>🐂 미궁 시뮬레이터</h2>
         <p>
           환영합니다! 🌀<br><br>
           이 페이지는 <b>스톤에이지 노바 서버</b>의 <b>미궁 부족</b>을 위한<br>
-          <mark>시뮬레이터 & 계산 도구</mark>입니다.
+          <mark>시뮬레이터 & 성장 계산 도구</mark>입니다.
+        </p>
+
+        <ul>
+          <li>🐾 초기치 시뮬레이터</li>
+          <li>📘 경험치 계산기</li>
+          <li>🪄 강화 시뮬레이터</li>
+          <li>📊 성장률 계산기</li>
+          <li>⚫ 오목 AI (독립 페이지)</li>
+        </ul>
+
+        <p style="margin-top:20px; font-size:14px; color:#9aa;">
+          제작: <b>storazi, discord : 지원(sub_bot)</b> ｜ 
+          <a href="https://github.com/atorazi" target="_blank" style="color:#ffd447;">GitHub 바로가기</a>
         </p>
       </section>
 
-      <!-- 🎨 디스코드 ANSI -->
+      <!-- 🎨 ANSI -->
       <section id="ansiTab" class="tab-content">
         <h2>🎨 디스코드 텍스트 생성기</h2>
         <iframe src="./ansi.html"
@@ -48,7 +63,7 @@ SPDX-License-Identifier: MIT
         </iframe>
       </section>
 
-      <!-- 🐾 초기치 시뮬레이터 -->
+      <!-- 🐾 초기치 -->
       <section id="simTab" class="tab-content">
         <h2>🐾 초기치 시뮬레이터</h2>
         <input id="petName" placeholder="펫 이름 입력">
@@ -70,8 +85,10 @@ SPDX-License-Identifier: MIT
         <input id="currentPercent" placeholder="현재 % (선택)">
         <input id="targetLevel" placeholder="목표 레벨">
         <input id="xpPerHour" placeholder="시간당 경험치량">
+
         <button id="run">계산하기</button>
         <button id="reset">초기화</button>
+
         <div id="results" hidden>
           <p>📊 필요 경험치: <span id="statRemain">-</span></p>
           <p>⏰ 예상 소요시간: <span id="statHours">-</span></p>
@@ -79,64 +96,31 @@ SPDX-License-Identifier: MIT
         </div>
       </section>
 
-      <!-- 🪄 강화 시뮬레이터 -->
+      <!-- 🪄 강화 -->
       <section id="enhanceTab" class="tab-content">
         <h2>🪄 강화 시뮬레이터</h2>
-        <!-- ... 기존 내용 그대로 ... -->
+        <!-- 기존 내용 유지 -->
       </section>
 
-      <!-- 📊 성장률 계산기 -->
+      <!-- 📊 성장률 -->
       <section id="growthTab" class="tab-content">
         <h2>📊 성장률 계산기</h2>
-        <!-- ... 기존 내용 그대로 ... -->
-      </section>
-
-      <!-- ⚫ 오목 AI (iframe 또는 직접 보드 삽입 가능) -->
-      <section id="omokTab" class="tab-content" style="padding:10px;">
-        <h2>⚫ 오목 AI (렌주룰)</h2>
-
-        <!-- 오목 보드 직접 삽입 -->
-        <div style="margin-top:10px;">
-          <div id="statusBox">준비 중...</div>
-          <div id="boardWrapper">
-            <div id="board" class="board"></div>
-          </div>
-
-          <!-- 옵션 -->
-          <div style="margin-top:12px;">
-            <label>
-              <input type="radio" name="difficulty" value="normal" checked> 보통
-            </label>
-            <label>
-              <input type="radio" name="difficulty" value="hard"> 어려움
-            </label>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <label>
-              <input type="radio" name="firstPlayer" value="human" checked> 흑(사람)
-            </label>
-            <label>
-              <input type="radio" name="firstPlayer" value="ai"> AI
-            </label>
-
-            <button id="resetBtn" style="margin-left:15px;">새 게임</button>
-          </div>
-        </div>
+        <!-- 기존 내용 유지 -->
       </section>
 
     </main>
   </div>
 
+  <!-- Footer -->
   <footer>
-    © 2025 <strong>storazi</strong>. All rights reserved.
+    © 2025 <strong>storazi</strong>. All rights reserved.<br>
+    Licensed under the MIT License.
   </footer>
 
-  <!-- 기존 app.js 유지 -->
+  <!-- 원래 쓰던 JS 그대로 유지 -->
   <script src="./app.js"></script>
 
-  <!-- 오목 전용 스크립트 -->
-  <script src="./omok.js"></script>
-
-  <!-- 탭 전환 스크립트 -->
+  <!-- 탭 전환 -->
   <script>
     const tabs = {
       tabHome:"homeTab",
@@ -144,8 +128,7 @@ SPDX-License-Identifier: MIT
       tabSim:"simTab",
       tabExp:"expTab",
       tabEnhance:"enhanceTab",
-      tabGrowth:"growthTab",
-      tabOmok:"omokTab"
+      tabGrowth:"growthTab"
     };
 
     Object.keys(tabs).forEach(key => {
@@ -162,7 +145,6 @@ SPDX-License-Identifier: MIT
 
         document.getElementById(tabs[key]).classList.add("active");
         btn.classList.add("active");
-
       });
     });
   </script>
