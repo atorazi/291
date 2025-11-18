@@ -107,8 +107,12 @@ h1 {
    돌
 =========================================== */
 .stone {
-    width: calc(100% / 15 * 0.82);
-    height: calc(100% / 15 * 0.82);
+    position: absolute;
+    width: var(--stone-size);
+    height: var(--stone-size);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px rgba(0,0,0,0.5);
 }
 
 
@@ -145,13 +149,17 @@ h1 {
 =========================================== */
 #ghostStone {
     position: absolute;
-    width: calc(100% / 15 * 0.82);
-    height: calc(100% / 15 * 0.82);
+    width: var(--stone-size);
+    height: var(--stone-size);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     opacity: 0;
     pointer-events: none;
     z-index: 20;
+}
+
+:root {
+    --stone-size: 32px; /* 원하는 돌 크기 */
 }
 
 #ghostStone.black {
