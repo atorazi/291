@@ -10,6 +10,47 @@ SPDX-License-Identifier: MIT
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>🐂 미궁 시뮬레이터</title>
   <link rel="stylesheet" href="./style.css">
+
+  <style>
+    /* ▼▼ 성장률 계산기 전용 CSS 통합 ▼▼ */
+    .growth-box {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:15px;
+    }
+    .growth-box input {
+      padding:8px;
+      width:160px;
+      border-radius:5px;
+      border:1px solid #556;
+      background:#0f1e3a;
+      color:#eaf2ff;
+    }
+    .growth-box button {
+      padding:8px 14px;
+      background:#ffd447;
+      border:none;
+      color:#000;
+      border-radius:5px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+    .growth-table {
+      margin-top:15px;
+      background:#121a2b;
+      padding:12px;
+      border-radius:8px;
+      line-height:1.6;
+      white-space:pre-line;
+    }
+    .good { color:#9f6; font-weight:bold; }
+    .bad { color:#ff7575; font-weight:bold; }
+
+    /* 탭 기본 설정 */
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+  </style>
 </head>
 
 <body>
@@ -25,7 +66,7 @@ SPDX-License-Identifier: MIT
       <!-- ⭐ 새 창으로 오목 AI 열기 -->
       <button onclick="window.open('/291/omok/index.html', '_blank')">⭕ 오목 AI</button>
 
-      <!-- 전투 시뮬레이터(기존 유지) -->
+      <!-- 전투 시뮬레이터 -->
       <button onclick="window.location.href='/291/simulator.html'">⚔️ 전투 시뮬레이터</button>
     </nav>
 
@@ -35,10 +76,7 @@ SPDX-License-Identifier: MIT
       <!-- 🏠 홈 -->
       <section id="homeTab" class="tab-content active">
         <h2>🐂 미궁 시뮬레이터</h2>
-        <p>
-          스톤에이지 노바 서버 <b>미궁 부족</b> 전용 도구 페이지입니다.
-        </p>
-
+        <p>스톤에이지 노바 서버 <b>미궁 부족</b> 전용 도구 페이지입니다.</p>
         <ul>
           <li>📘 경험치 계산기</li>
           <li>📊 성장률 계산기</li>
@@ -46,7 +84,6 @@ SPDX-License-Identifier: MIT
           <li>⚔️ 전투 시뮬레이터</li>
           <li>⭕ 오목 AI (새 창)</li>
         </ul>
-
         <p style="margin-top:20px; font-size:14px; color:#9aa;">
           제작: <b>storazi</b> ｜ discord : 지원(sub_bot)
         </p>
@@ -77,16 +114,19 @@ SPDX-License-Identifier: MIT
         </div>
       </section>
 
-      <!-- 📊 성장률 계산기 -->
+      <!-- 📊 성장률 계산기 (완전 통합본) -->
       <section id="growthTab" class="tab-content">
         <h2>📊 성장률 계산기</h2>
-        <input id="growthName" placeholder="펫 이름">
-        <input id="growthLevel" placeholder="레벨">
-        <input id="growthHP" placeholder="HP">
-        <input id="growthAtk" placeholder="Atk">
-        <input id="growthDef" placeholder="Def">
-        <input id="growthAgi" placeholder="Agi">
-        <button id="growthRun">계산하기</button>
+
+        <div class="growth-box">
+          <input id="growthName" placeholder="펫 이름">
+          <input id="growthLevel" type="number" placeholder="레벨">
+          <input id="growthHP" type="number" placeholder="HP">
+          <input id="growthAtk" type="number" placeholder="Atk">
+          <input id="growthDef" type="number" placeholder="Def">
+          <input id="growthAgi" type="number" placeholder="Agi">
+          <button id="growthRun">계산하기</button>
+        </div>
 
         <div id="growthResult" class="growth-table"></div>
       </section>
@@ -101,31 +141,92 @@ SPDX-License-Identifier: MIT
 
 <script src="./app.js"></script>
 
+<!-- ▼▼ 성장률 계산기 JS 완전 통합 ▼▼ -->
 <script>
-  const tabs = {
-    tabHome:"homeTab",
-    tabAnsi:"ansiTab",
-    tabExp:"expTab",
-    tabGrowth:"growthTab"
-  };
+async function loadPetDB() {
+  const res = await fetch("./data/spet.json");
+  return await res.json();
+}
 
-  Object.keys(tabs).forEach(key => {
-    const btn = document.getElementById(key);
-    if (!btn) return;
+function calcStat(init, grow, level) {
+  return Math.floor(init + grow * (level - 1));
+}
 
-    btn.addEventListener("click", () => {
+document.getElementById("growthRun").addEventListener("click", async () => {
+  const name = growthName.value.trim();
+  const level = Number(growthLevel.value);
+  const hp = Number(growthHP.value);
+  const atk = Number(growthAtk.value);
+  const def = Number(growthDef.value);
+  const agi = Number(growthAgi.value);
 
-      document.querySelectorAll(".tab-content")
-        .forEach(t => t.classList.remove("active"));
+  if (!name || !level) {
+    growthResult.innerHTML =
+      "<span class='bad'>❌ 펫 이름과 레벨은 필수 입력입니다.</span>";
+    return;
+  }
 
-      document.querySelectorAll(".sidebar button")
-        .forEach(b => b.classList.remove("active"));
+  const db = await loadPetDB();
+  const pet = db.find(p => p.name === name);
 
-      document.getElementById(tabs[key]).classList.add("active");
-      btn.classList.add("active");
+  if (!pet) {
+    growthResult.innerHTML = `<span class='bad'>❌ '${name}' 펫 데이터를 찾을 수 없습니다.</span>`;
+    return;
+  }
 
-    });
+  const s_hp  = calcStat(pet.init.hp,  pet.grow.hp,  level);
+  const s_atk = calcStat(pet.init.atk, pet.grow.atk, level);
+  const s_def = calcStat(pet.init.def, pet.grow.def, level);
+  const s_agi = calcStat(pet.init.agi, pet.grow.agi, level);
+
+  const d_hp  = hp  - s_hp;
+  const d_atk = atk - s_atk;
+  const d_def = def - s_def;
+  const d_agi = agi - s_agi;
+
+  function fmt(n) {
+    if (n > 0) return `<span class='good'>+${n}</span>`;
+    if (n < 0) return `<span class='bad'>${n}</span>`;
+    return n;
+  }
+
+  growthResult.innerHTML = `
+📌 <b>${name}</b> / Lv.${level} 예상 능력치
+
+🧬 예상치(S급):
+- HP : ${s_hp}
+- Atk : ${s_atk}
+- Def : ${s_def}
+- Agi : ${s_agi}
+
+🧪 입력한 능력치와의 편차:
+- HP : ${fmt(d_hp)}
+- Atk : ${fmt(d_atk)}
+- Def : ${fmt(d_def)}
+- Agi : ${fmt(d_agi)}
+`;
+});
+
+/* ▼ 탭 전환 기능 유지 ▼ */
+const tabs = {
+  tabHome:"homeTab",
+  tabAnsi:"ansiTab",
+  tabExp:"expTab",
+  tabGrowth:"growthTab"
+};
+
+Object.keys(tabs).forEach(key => {
+  const btn = document.getElementById(key);
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+
+    document.getElementById(tabs[key]).classList.add("active");
+    btn.classList.add("active");
   });
+});
 </script>
 
 </body>
