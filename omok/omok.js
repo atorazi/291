@@ -1,5 +1,5 @@
 /* ============================================================
-   오목 AI (렌주룰) – 완성형 하이브리드 AI
+   오목 AI (렌주룰) – 최상위 하이브리드 AI (강제수 완전판)
 ============================================================ */
 
 const SIZE = 14;
@@ -14,7 +14,7 @@ let turn = BLACK;
 let gameOver = false;
 let ghostStone;
 
-let stoneSize = 44; // 돌 크기
+let stoneSize = 44;
 const CELL = 100 / (SIZE - 1);
 
 /* ============================================================
@@ -34,7 +34,7 @@ function initBoard() {
 }
 
 /* ============================================================
-   클릭 포인트 생성 (교차점 정확)
+   클릭 포인트 생성
 ============================================================ */
 function createBoardUI() {
     const boardEl = document.getElementById("board");
@@ -70,7 +70,6 @@ function renderBoard() {
 
     for (let y = 0; y < SIZE; y++) {
         for (let x = 0; x < SIZE; x++) {
-
             const v = board[y][x];
 
             if (turn === BLACK && v === EMPTY && isForbidden(board, x, y)) {
@@ -78,7 +77,7 @@ function renderBoard() {
                 ban.className = "ban";
                 ban.textContent = "X";
                 ban.style.left = `${x * CELL}%`;
-                ban.style.top  = `${y * CELL}%`;
+                ban.style.top = `${y * CELL}%`;
                 boardEl.appendChild(ban);
             }
 
@@ -86,7 +85,7 @@ function renderBoard() {
                 const s = document.createElement("div");
                 s.className = "stone " + (v === BLACK ? "black" : "white");
                 s.style.left = `${x * CELL}%`;
-                s.style.top  = `${y * CELL}%`;
+                s.style.top = `${y * CELL}%`;
                 boardEl.appendChild(s);
             }
         }
@@ -94,7 +93,7 @@ function renderBoard() {
 }
 
 /* ============================================================
-   hover 미리보기
+   hover
 ============================================================ */
 function onHover(e) {
     if (gameOver) return;
@@ -128,14 +127,14 @@ function onHumanClick(e) {
     if (board[y][x] !== EMPTY) return;
 
     if (turn === BLACK && isForbidden(board, x, y)) {
-        setStatus("⚠ 금수 자리입니다!");
+        setStatus("⚠️ 금수 자리입니다!");
         return;
     }
 
     placeStone(x, y, humanColor);
 
     if (checkWin(humanColor)) {
-        setStatus("🎉 당신의 승리!");
+        setStatus("🎉 당신 승리!");
         gameOver = true;
         renderBoard();
         return;
@@ -170,43 +169,44 @@ function startGame() {
     turn = BLACK;
     gameOver = false;
 
-    setStatus("새 게임이 시작되었습니다.");
+    setStatus("새 게임 시작!");
 
     if (first === "ai") aiStartMove();
 }
 
 /* ============================================================
-   AI 착수 (강화된 하이브리드)
+   AI 착수
 ============================================================ */
 async function aiStartMove() {
     if (gameOver) return;
 
     setStatus("AI 생각 중...");
-    await new Promise(r => setTimeout(r, 80));
+    await new Promise(r => setTimeout(r, 50));
 
-    // 🟦 AI 선공 첫 수: 중앙
+    // AI 첫 수 = 중앙
     if (isBoardEmpty()) {
         placeStone(7, 7, aiColor);
-        renderBoard();
         turn = humanColor;
-        setStatus("당신 차례입니다.");
+        setStatus("당신 차례");
+        renderBoard();
         return;
     }
 
     let mv = aiMoveHybrid();
+
     if (!mv) mv = findNonForbiddenMove();
 
     placeStone(mv.x, mv.y, aiColor);
 
     if (checkWin(aiColor)) {
-        setStatus("💀 AI 승리!");
+        setStatus("💀 AI 승리");
         gameOver = true;
         renderBoard();
         return;
     }
 
     turn = humanColor;
-    setStatus("당신 차례입니다.");
+    setStatus("당신 차례");
     renderBoard();
 }
 
@@ -217,84 +217,125 @@ function aiMoveHybrid() {
     const me = aiColor;
     const opp = humanColor;
 
+    // 1) 내가 이기는 즉승 수
     let win = findWinningMove(me);
     if (win) return win;
 
+    // 2) 상대가 이기는 수 → 반드시 막기
     let block = findWinningMove(opp);
     if (block) return block;
 
+    // 3) 강제수 (연속 공격)
     let force = findBestForceMove(me);
     if (force) return force;
 
+    // 4) 상대 강제수 차단
     let blockForce = findBestForceMove(opp);
     if (blockForce) return blockForce;
 
+    // 5) 패턴 기반 평가
     return evaluateBestMove(me, opp);
 }
 
 /* ============================================================
-   승리수 / 강제수 / 패턴 기반
+   ★★★★★
+   "절대 4목을 놓치지 않는" 새로운 강제승리 탐지 시스템
+   기존 findWinningMove 완전 교체!
+   ★★★★★
 ============================================================ */
+
+// 특정 자리에 두었을 때 정확히 5목이 완성되는지 테스트
+function isFiveAfterPut(x, y, color) {
+    board[y][x] = color;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let win = false;
+
+    for (const [dx, dy] of dirs) {
+        let cnt = 1;
+
+        // 정방향
+        let nx = x + dx, ny = y + dy;
+        while (isIn(nx, ny) && board[ny][nx] === color) {
+            cnt++; nx += dx; ny += dy;
+        }
+
+        // 반대방향
+        nx = x - dx; ny = y - dy;
+        while (isIn(nx, ny) && board[ny][nx] === color) {
+            cnt++; nx -= dx; ny -= dy;
+        }
+
+        if (cnt >= 5) win = true;
+    }
+
+    board[y][x] = EMPTY;
+    return win;
+}
+
+// 즉승/즉패 100% 감지
 function findWinningMove(color) {
     for (let y = 0; y < SIZE; y++) {
         for (let x = 0; x < SIZE; x++) {
+
             if (board[y][x] !== EMPTY) continue;
             if (color === BLACK && isForbidden(board, x, y)) continue;
 
-            board[y][x] = color;
-            const ok = checkWin(color);
-            board[y][x] = EMPTY;
-
-            if (ok) return { x, y };
+            if (isFiveAfterPut(x, y, color)) {
+                return { x, y };
+            }
         }
     }
     return null;
 }
 
+/* ============================================================
+   강제수 / 패턴
+============================================================ */
 function findBestForceMove(color) {
     let best = null, bestScore = 0;
 
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
+    for (let y = 0; y < SIZE; y++)
+        for (let x = 0; x < SIZE; x++)
+        {
             if (board[y][x] !== EMPTY) continue;
             if (color === BLACK && isForbidden(board, x, y)) continue;
 
             let score = forceScore(x, y, color);
-
             if (score > bestScore) {
                 bestScore = score;
                 best = { x, y };
             }
         }
-    }
 
     return best;
 }
 
 function forceScore(x, y, color) {
     let score = 0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
 
-    for (const [dx, dy] of [[1,0],[0,1],[1,1],[1,-1]]) {
-        let c = countSeq(board, x, y, dx, dy, color);
-        if (c === 4) score += 50000;
-        if (c === 3) score += 3000;
-        if (c === 2) score += 60;
+    for (const [dx, dy] of dirs) {
+        const c = countSeq(board, x, y, dx, dy, color);
+
+        if (c >= 4) score += 50000;
+        else if (c === 3) score += 3000;
+        else if (c === 2) score += 60;
     }
-
     return score;
 }
 
+/* ============================================================
+   패턴 기반 평가
+============================================================ */
 function evaluateBestMove(me, opp) {
     let best = null;
     let bestScore = -999999;
 
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
+    for (let y = 0; y < SIZE; y++)
+        for (let x = 0; x < SIZE; x++)
+        {
             if (board[y][x] !== EMPTY) continue;
             if (me === BLACK && isForbidden(board, x, y)) continue;
-
             if (!hasNearbyStone(x, y)) continue;
 
             let score = 0;
@@ -306,7 +347,6 @@ function evaluateBestMove(me, opp) {
             score += patternScore(x, y, opp) * 1.0;
 
             board[y][x] = me;
-
             score += (14 - (Math.abs(x - 7) + Math.abs(y - 7))) * 3;
 
             board[y][x] = EMPTY;
@@ -316,15 +356,15 @@ function evaluateBestMove(me, opp) {
                 best = { x, y };
             }
         }
-    }
 
     return best;
 }
 
 function patternScore(x, y, color) {
     let score = 0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
 
-    for (const [dx, dy] of [[1,0],[0,1],[1,1],[1,-1]]) {
+    for (const [dx, dy] of dirs) {
         const c = countSeq(board, x, y, dx, dy, color);
 
         if (c >= 4) score += 200000;
@@ -336,7 +376,7 @@ function patternScore(x, y, color) {
 }
 
 /* ============================================================
-   유틸
+   공용 유틸
 ============================================================ */
 function isBoardEmpty() {
     return board.every(row => row.every(v => v === EMPTY));
@@ -365,8 +405,8 @@ function checkWin(color) {
             if (board[y][x] === color)
                 for (const [dx, dy] of [[1,0],[0,1],[1,1],[1,-1]]) {
                     let cnt = 1;
-
                     let nx = x + dx, ny = y + dy;
+
                     while (isIn(nx, ny) && board[ny][nx] === color)
                         cnt++, nx += dx, ny += dy;
 
@@ -376,7 +416,6 @@ function checkWin(color) {
 
                     if (cnt >= 5) return true;
                 }
-
     return false;
 }
 
@@ -395,7 +434,7 @@ function countSeq(bd, x, y, dx, dy, color) {
 }
 
 /* ============================================================
-   금수 룰 (렌주룰)
+   렌주룰 금수
 ============================================================ */
 function isForbidden(bd, x, y) {
     if (bd[y][x] !== EMPTY) return true;
@@ -468,4 +507,3 @@ window.onload = () => {
     document.documentElement.style.setProperty("--stone-size", stoneSize + "px");
     startGame();
 };
-
