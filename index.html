@@ -1,8 +1,3 @@
-<!--
-SPDX-FileCopyrightText: © 2025 atorazi <atorazi@github.io>
-SPDX-License-Identifier: MIT
--->
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -12,44 +7,32 @@ SPDX-License-Identifier: MIT
   <link rel="stylesheet" href="./style.css">
 
   <style>
-    /* ▼▼ 성장률 계산기 전용 CSS 통합 ▼▼ */
-    .growth-box {
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-bottom:15px;
+    /* 오목 iframe wrapper */
+    #omokWrapper {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #000;
+      position: relative;
+      margin:0;
+      padding:0;
     }
-    .growth-box input {
-      padding:8px;
-      width:160px;
-      border-radius:5px;
-      border:1px solid #556;
-      background:#0f1e3a;
-      color:#eaf2ff;
-    }
-    .growth-box button {
-      padding:8px 14px;
-      background:#ffd447;
-      border:none;
-      color:#000;
-      border-radius:5px;
-      cursor:pointer;
-      font-weight:bold;
-    }
-    .growth-table {
-      margin-top:15px;
-      background:#121a2b;
-      padding:12px;
-      border-radius:8px;
-      line-height:1.6;
-      white-space:pre-line;
-    }
-    .good { color:#9f6; font-weight:bold; }
-    .bad { color:#ff7575; font-weight:bold; }
 
-    /* 탭 기본 설정 */
-    .tab-content { display:none; }
-    .tab-content.active { display:block; }
+    #omokFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000;
+    }
+
+    .content.active-omok {
+      padding: 0 !important;
+    }
+
+    body.omok-mode {
+      padding: 0 !important;
+    }
   </style>
 </head>
 
@@ -62,39 +45,43 @@ SPDX-License-Identifier: MIT
       <button id="tabAnsi">🎨 디스코드 텍스트</button>
       <button id="tabExp">📘 경험치 계산기</button>
       <button id="tabGrowth">📊 성장률 계산기</button>
-
-      <!-- ⭐ 새 창으로 오목 AI 열기 -->
-      <button onclick="window.open('/291/omok/index.html', '_blank')">⭕ 오목 AI</button>
-
-      <!-- 전투 시뮬레이터 -->
       <button onclick="window.location.href='/291/simulator.html'">⚔️ 전투 시뮬레이터</button>
+      <button id="tabOmok">⭕ 오목 AI</button>
     </nav>
 
-    <!-- 📈 메인 콘텐츠 -->
+    <!-- 📈 오른쪽 콘텐츠 -->
     <main class="content">
 
       <!-- 🏠 홈 -->
       <section id="homeTab" class="tab-content active">
         <h2>🐂 미궁 시뮬레이터</h2>
-        <p>스톤에이지 노바 서버 <b>미궁 부족</b> 전용 도구 페이지입니다.</p>
+        <p>
+          환영합니다! 🌀<br><br>
+          이 페이지는 <b>스톤에이지 노바 서버</b>의 <b>미궁 부족</b>을 위한<br>
+          <mark>시뮬레이터 & 성장 계산 도구</mark>입니다.
+        </p>
+
         <ul>
+          <li>🎨 디스코드 ANSI 텍스트</li>
           <li>📘 경험치 계산기</li>
           <li>📊 성장률 계산기</li>
-          <li>🎨 디스코드 ANSI 텍스트 생성기</li>
+          <li>⭕ 오목 AI</li>
           <li>⚔️ 전투 시뮬레이터</li>
-          <li>⭕ 오목 AI (새 창)</li>
         </ul>
+
         <p style="margin-top:20px; font-size:14px; color:#9aa;">
-          제작: <b>storazi</b> ｜ discord : 지원(sub_bot)
+          제작: <b>storazi</b> ｜ 
+          <a href="https://github.com/atorazi" target="_blank" style="color:#ffd447;">GitHub</a>
         </p>
       </section>
 
-      <!-- 🎨 디스코드 ANSI -->
+      <!-- 🎨 ANSI 텍스트 생성기 -->
       <section id="ansiTab" class="tab-content">
         <h2>🎨 디스코드 텍스트 생성기</h2>
         <iframe src="./ansi.html"
           width="100%" height="780"
-          style="border:none; border-radius:10px; background:#0b1220;"></iframe>
+          style="border:none; border-radius:10px; background:#0b1220;">
+        </iframe>
       </section>
 
       <!-- 📘 경험치 계산기 -->
@@ -104,31 +91,42 @@ SPDX-License-Identifier: MIT
         <input id="currentPercent" placeholder="현재 % (선택)">
         <input id="targetLevel" placeholder="목표 레벨">
         <input id="xpPerHour" placeholder="시간당 경험치량">
+
         <button id="run">계산하기</button>
         <button id="reset">초기화</button>
 
         <div id="results" hidden>
           <p>📊 필요 경험치: <span id="statRemain">-</span></p>
-          <p>⏰ 예상 시간: <span id="statHours">-</span></p>
+          <p>⏰ 예상 소요시간: <span id="statHours">-</span></p>
           <p>📅 일수 환산: <span id="statDays">-</span></p>
         </div>
       </section>
 
-      <!-- 📊 성장률 계산기 (완전 통합본) -->
+      <!-- 📊 성장률 계산기 -->
       <section id="growthTab" class="tab-content">
         <h2>📊 성장률 계산기</h2>
-
-        <div class="growth-box">
-          <input id="growthName" placeholder="펫 이름">
-          <input id="growthLevel" type="number" placeholder="레벨">
-          <input id="growthHP" type="number" placeholder="HP">
-          <input id="growthAtk" type="number" placeholder="Atk">
-          <input id="growthDef" type="number" placeholder="Def">
-          <input id="growthAgi" type="number" placeholder="Agi">
-          <button id="growthRun">계산하기</button>
-        </div>
+        <input id="growthName" placeholder="펫 이름 입력">
+        <input id="growthLevel" placeholder="현재 레벨">
+        <input id="growthHP" placeholder="체력(HP)">
+        <input id="growthAtk" placeholder="공격력(Atk)">
+        <input id="growthDef" placeholder="방어력(Def)">
+        <input id="growthAgi" placeholder="순발력(Agi)">
+        <button id="growthRun">조회</button>
 
         <div id="growthResult" class="growth-table"></div>
+      </section>
+
+      <!-- ⭕ 오목 AI -->
+      <section id="omokTab" class="tab-content" style="padding:0 !important; margin:0 !important;">
+        <h2 style="margin:10px 0 5px 0;">⭕ 오목 AI (렌주룰)</h2>
+
+        <div id="omokWrapper">
+          <iframe src="/291/omok/index.html" id="omokFrame"></iframe>
+        </div>
+
+        <p style="font-size:12px; opacity:0.7; margin:8px 0;">
+          렌주룰 적용 오목 AI
+        </p>
       </section>
 
     </main>
@@ -139,94 +137,67 @@ SPDX-License-Identifier: MIT
     <img src="https://hits.sh/atorazi.github.io/291.svg?color=f3ff00&labelColor=111ca8">
   </footer>
 
+<script>
+function fitOmokHeight() {
+  const wrap = document.getElementById("omokWrapper");
+  const iframe = document.getElementById("omokFrame");
+  if (!wrap || !iframe) return;
+
+  const footerSpace = 120;
+  const vh = window.innerHeight;
+  const top = wrap.getBoundingClientRect().top;
+
+  const newHeight = vh - top - footerSpace;
+  wrap.style.height = newHeight + "px";
+  iframe.style.height = newHeight + "px";
+}
+
+window.addEventListener("resize", fitOmokHeight);
+</script>
+
 <script src="./app.js"></script>
 
-<!-- ▼▼ 성장률 계산기 JS 완전 통합 ▼▼ -->
 <script>
-async function loadPetDB() {
-  const res = await fetch("./data/spet.json");
-  return await res.json();
-}
+  const tabs = {
+    tabHome:"homeTab",
+    tabAnsi:"ansiTab",
+    tabExp:"expTab",
+    tabGrowth:"growthTab",
+    tabOmok:"omokTab"
+  };
 
-function calcStat(init, grow, level) {
-  return Math.floor(init + grow * (level - 1));
-}
+  Object.keys(tabs).forEach(key => {
+    const btn = document.getElementById(key);
+    if (!btn) return;
 
-document.getElementById("growthRun").addEventListener("click", async () => {
-  const name = growthName.value.trim();
-  const level = Number(growthLevel.value);
-  const hp = Number(growthHP.value);
-  const atk = Number(growthAtk.value);
-  const def = Number(growthDef.value);
-  const agi = Number(growthAgi.value);
+    btn.addEventListener("click", () => {
 
-  if (!name || !level) {
-    growthResult.innerHTML =
-      "<span class='bad'>❌ 펫 이름과 레벨은 필수 입력입니다.</span>";
-    return;
-  }
+      document.querySelectorAll(".tab-content").forEach(t =>
+        t.classList.remove("active")
+      );
 
-  const db = await loadPetDB();
-  const pet = db.find(p => p.name === name);
+      document.querySelectorAll(".sidebar button").forEach(b =>
+        b.classList.remove("active")
+      );
 
-  if (!pet) {
-    growthResult.innerHTML = `<span class='bad'>❌ '${name}' 펫 데이터를 찾을 수 없습니다.</span>`;
-    return;
-  }
+      document.getElementById(tabs[key]).classList.add("active");
+      btn.classList.add("active");
 
-  const s_hp  = calcStat(pet.init.hp,  pet.grow.hp,  level);
-  const s_atk = calcStat(pet.init.atk, pet.grow.atk, level);
-  const s_def = calcStat(pet.init.def, pet.grow.def, level);
-  const s_agi = calcStat(pet.init.agi, pet.grow.agi, level);
+      const body = document.body;
+      const content = document.querySelector("main.content");
 
-  const d_hp  = hp  - s_hp;
-  const d_atk = atk - s_atk;
-  const d_def = def - s_def;
-  const d_agi = agi - s_agi;
+      if (key === "tabOmok") {
+        content.classList.add("active-omok");
+        body.classList.add("omok-mode");
+        setTimeout(fitOmokHeight, 50);
+        setTimeout(fitOmokHeight, 200);
+      } else {
+        content.classList.remove("active-omok");
+        body.classList.remove("omok-mode");
+      }
 
-  function fmt(n) {
-    if (n > 0) return `<span class='good'>+${n}</span>`;
-    if (n < 0) return `<span class='bad'>${n}</span>`;
-    return n;
-  }
-
-  growthResult.innerHTML = `
-📌 <b>${name}</b> / Lv.${level} 예상 능력치
-
-🧬 예상치(S급):
-- HP : ${s_hp}
-- Atk : ${s_atk}
-- Def : ${s_def}
-- Agi : ${s_agi}
-
-🧪 입력한 능력치와의 편차:
-- HP : ${fmt(d_hp)}
-- Atk : ${fmt(d_atk)}
-- Def : ${fmt(d_def)}
-- Agi : ${fmt(d_agi)}
-`;
-});
-
-/* ▼ 탭 전환 기능 유지 ▼ */
-const tabs = {
-  tabHome:"homeTab",
-  tabAnsi:"ansiTab",
-  tabExp:"expTab",
-  tabGrowth:"growthTab"
-};
-
-Object.keys(tabs).forEach(key => {
-  const btn = document.getElementById(key);
-  if (!btn) return;
-
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
-
-    document.getElementById(tabs[key]).classList.add("active");
-    btn.classList.add("active");
+    });
   });
-});
 </script>
 
 </body>
