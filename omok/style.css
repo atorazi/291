@@ -29,7 +29,7 @@ h1 {
     margin: auto;
 }
 
-/* 💎 핵심: 16×16 선 → 교차점 정확 */
+/* 🎯 핵심: 16개 선(0~14 교차점), 칸 간격 = 100 / 14 */
 #board {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -40,24 +40,24 @@ h1 {
         linear-gradient(to right, #1e396e 1px, transparent 1px),
         linear-gradient(to bottom, #1e396e 1px, transparent 1px);
 
-    /* 15개 칸 = 16개 선 */
-    background-size: calc(100% / 15) calc(100% / 15);
+    /* ← 기존 100/15 는 틀림. 이게 교차점 오차의 원인 */
+    background-size: calc(100% / 14) calc(100% / 14);
 }
 
-/* 💎 클릭점: 작은 점으로 만들어야 교차점 정확 */
+/* 교차점 클릭 포인트 – 겹치지 않아야 함 */
 .point {
-    width: 20px;
-    height: 20px;
+    width: 1px;
+    height: 1px;
     position: absolute;
     transform: translate(-50%, -50%);
     cursor: pointer;
     z-index: 2;
 }
 
-/* 💎 돌: 교차점 중심에 위치 */
+/* 돌 – 교차점 중심에 정확히 위치시키기 */
 .stone {
-    width: 28px;
-    height: 28px;
+    width: calc(100% / 14 * 0.75);
+    height: calc(100% / 14 * 0.75);
     border-radius: 50%;
     position: absolute;
     transform: translate(-50%, -50%);
@@ -76,7 +76,7 @@ h1 {
 
 .forbid {
     color: #ffd447;
-    font-size: 20px;
+    font-size: calc(100% / 14);
     font-weight: bold;
     position: absolute;
     transform: translate(-50%, -50%);
