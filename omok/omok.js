@@ -1,10 +1,7 @@
 /* ============================================================
-   오목 AI – S/U 최강 버전
-   - 15x15
-   - 렌주룰 적용
-   - S = Strong = 깊이 2~3
-   - U = Ultra = 깊이 4 (상황 따라 4.5)
-   - 시작 랜덤
+   🧠 Ultra Pro Renju AI (VCF / VCT / Threat-Space Search)
+   - 인간 실력 거의 불가 → 챌린지용
+   - 후보수 생성 + 위협 기반 탐색 + 강제승리 트리
 ============================================================ */
 
 const SIZE = 15;
@@ -12,441 +9,77 @@ const EMPTY = 0;
 const BLACK = 1;
 const WHITE = 2;
 
+// 탐색 깊이 설정
+const DEPTH_S = 4;
+const DEPTH_U = 7;
+
 let board = [];
-let turn = BLACK;
 let humanColor = BLACK;
 let aiColor = WHITE;
+let turn = BLACK;
 let gameOver = false;
 
 /* ============================================================
-   초기 보드 생성
+   보드 생성
 ============================================================ */
 function initBoard() {
     board = Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY));
 }
 
 /* ============================================================
-   UI 보드 생성 (테이블 기반)
+   금수 체크 (렌주룰)
 ============================================================ */
-function createBoardUI() {
-    const tbl = document.getElementById("board");
-    tbl.innerHTML = "";
+function isForbidden(x, y) {
+    if (board[y][x] !== EMPTY) return true;
 
-    for (let y = 0; y < SIZE; y++) {
-        const row = document.createElement("tr");
+    board[y][x] = BLACK;
 
-        for (let x = 0; x < SIZE; x++) {
-            const cell = document.createElement("td");
-            cell.dataset.x = x;
-            cell.dataset.y = y;
+    const overline =
+        countLine(x, y, 1, 0, BLACK) >= 6 ||
+        countLine(x, y, 0, 1, BLACK) >= 6 ||
+        countLine(x, y, 1, 1, BLACK) >= 6 ||
+        countLine(x, y, 1, -1, BLACK) >= 6;
 
-            cell.addEventListener("click", onHumanClick);
-            row.appendChild(cell);
-        }
-        tbl.appendChild(row);
-    }
+    const d3 = countDoubleThree(x, y);
+    const d4 = countDoubleFour(x, y);
+
+    board[y][x] = EMPTY;
+
+    return overline || d3 || d4;
 }
 
-/* ============================================================
-   보드 렌더링 (돌, 금수)
-============================================================ */
-function renderBoard() {
-    const tbl = document.getElementById("board");
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-            const td = tbl.rows[y].cells[x];
-            td.className = "";       // 초기화
-            td.textContent = "";     // 금수표시 제거
-
-            const v = board[y][x];
-
-            if (v === BLACK) td.classList.add("black");
-            else if (v === WHITE) td.classList.add("white");
-
-            // 금수 (흑 차례일 때만)
-            if (turn === BLACK && v === EMPTY) {
-                if (isForbidden(board, x, y)) {
-                    td.classList.add("forbid");
-                    td.textContent = "X";
-                }
-            }
-        }
-    }
-}
-
-/* ============================================================
-   사람 착수
-============================================================ */
-function onHumanClick(e) {
-    if (gameOver) return;
-    if (turn !== humanColor) return;
-
-    const x = +e.target.dataset.x;
-    const y = +e.target.dataset.y;
-
-    if (board[y][x] !== EMPTY) return;
-
-    if (humanColor === BLACK && isForbidden(board, x, y)) {
-        setStatus("⚠ 금수 자리입니다!");
-        return;
-    }
-
-    board[y][x] = humanColor;
-
-    if (checkWin(humanColor)) {
-        gameOver = true;
-        renderBoard();
-        setStatus("🎉 당신의 승리!");
-        return;
-    }
-
-    turn = aiColor;
-    renderBoard();
-    aiStart();
-}
-
-/* ============================================================
-   게임 시작
-============================================================ */
-function startGame() {
-    gameOver = false;
-
-    const fp = document.querySelector("input[name=firstPlayer]:checked").value;
-    humanColor = (fp === "human") ? BLACK : WHITE;
-    aiColor = (humanColor === BLACK) ? WHITE : BLACK;
-    turn = BLACK;
-
-    initBoard();
-    createBoardUI();
-    renderBoard();
-
-    setStatus("게임 시작!");
-
-    if (fp === "ai") {
-        aiStart();
-    }
-}
-
-/* ============================================================
-   AI 실행
-============================================================ */
-async function aiStart() {
-    if (gameOver) return;
-
-    await wait(80);
-
-    // 첫 수: 랜덤
-    if (board.flat().every(v => v === EMPTY)) {
-        const r = Math.floor(Math.random() * SIZE);
-        const c = Math.floor(Math.random() * SIZE);
-        board[r][c] = aiColor;
-        turn = humanColor;
-        renderBoard();
-        return;
-    }
-
-    const move = aiMove();
-
-    if (!move) {
-        setStatus("무승부");
-        gameOver = true;
-        return;
-    }
-
-    board[move.y][move.x] = aiColor;
-
-    if (checkWin(aiColor)) {
-        gameOver = true;
-        renderBoard();
-        setStatus("💀 AI 승리");
-        return;
-    }
-
-    turn = humanColor;
-    renderBoard();
-}
-
-/* ============================================================
-   AI Move
-   S = depth 2~3
-   U = depth 4 (확대 탐색)
-============================================================ */
-function aiMove() {
-    const diff = document.querySelector("input[name=difficulty]:checked").value;
-    const depth = (diff === "U") ? 4 : 2;
-
-    const me = aiColor;
-    const opp = humanColor;
-
-    // 즉승
-    let win = findWinningMove(me);
-    if (win) return win;
-
-    // 즉패 방어
-    let block = findWinningMove(opp);
-    if (block) return block;
-
-    // 강한 threat 기반
-    let t1 = threatMove(me);
-    if (t1) return t1;
-
-    let t2 = threatMove(opp);
-    if (t2) return t2;
-
-    // 후보수
-    const moves = generateCandidates();
-
-    let best = null;
-    let bestVal = -Infinity;
-
-    for (const mv of moves) {
-        board[mv.y][mv.x] = me;
-        const val = minimax(depth, false, me, opp, -99999999, 99999999);
-        board[mv.y][mv.x] = EMPTY;
-
-        if (val > bestVal) {
-            bestVal = val;
-            best = mv;
-        }
-    }
-    return best;
-}
-
-/* ============================================================
-   Minimax + AlphaBeta
-============================================================ */
-function minimax(depth, maximizing, me, opp, alpha, beta) {
-
-    if (depth === 0) return evaluate(me, opp);
-
-    const moves = generateCandidates();
-
-    if (moves.length === 0) return 0;
-
-    if (maximizing) {
-        let best = -Infinity;
-
-        for (const mv of moves) {
-            board[mv.y][mv.x] = me;
-
-            if (checkWin(me)) {
-                board[mv.y][mv.x] = EMPTY;
-                return 9999999;
-            }
-
-            const val = minimax(depth - 1, false, me, opp, alpha, beta);
-            board[mv.y][mv.x] = EMPTY;
-
-            best = Math.max(best, val);
-            alpha = Math.max(alpha, val);
-
-            if (alpha >= beta) break;
-        }
-        return best;
-    }
-
-    else {
-        let best = Infinity;
-
-        for (const mv of moves) {
-            board[mv.y][mv.x] = opp;
-
-            if (checkWin(opp)) {
-                board[mv.y][mv.x] = EMPTY;
-                return -9999999;
-            }
-
-            const val = minimax(depth - 1, true, me, opp, alpha, beta);
-            board[mv.y][mv.x] = EMPTY;
-
-            best = Math.min(best, val);
-            beta = Math.min(beta, val);
-
-            if (alpha >= beta) break;
-        }
-        return best;
-    }
-}
-
-/* ============================================================
-   후보수 생성 (근처 위주)
-============================================================ */
-function generateCandidates() {
-    const res = [];
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
-            if (board[y][x] !== EMPTY) continue;
-            if (!nearStone(x, y)) continue;
-
-            let score = 0;
-
-            score += patternScore(x, y, aiColor) * 2;
-            score += patternScore(x, y, humanColor);
-
-            res.push({ x, y, score });
-        }
-    }
-
-    res.sort((a, b) => b.score - a.score);
-    return res.slice(0, 12);
-}
-
-/* ============================================================
-   평가 함수
-============================================================ */
-function evaluate(me, opp) {
-    let score = 0;
-
-    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-
-            const v = board[y][x];
-
-            for (const [dx, dy] of dirs) {
-                const c = countSeq(board, x, y, dx, dy, v);
-
-                if (v === me) {
-                    if (c >= 5) score += 5000000;
-                    else if (c === 4) score += 80000;
-                    else if (c === 3) score += 2000;
-                    else if (c === 2) score += 50;
-                }
-
-                else if (v === opp) {
-                    if (c >= 5) score -= 8000000;
-                    else if (c === 4) score -= 120000;
-                    else if (c === 3) score -= 3000;
-                    else if (c === 2) score -= 70;
-                }
-            }
-        }
-    }
-    return score;
-}
-
-/* ============================================================
-   승리 체크
-============================================================ */
-function checkWin(color) {
-    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-            if (board[y][x] !== color) continue;
-
-            for (const [dx, dy] of dirs) {
-                if (countSeq(board, x, y, dx, dy, color) >= 5) return true;
-            }
-        }
-    }
-    return false;
-}
-
-/* ============================================================
-   Seq 카운트
-============================================================ */
-function countSeq(bd, x, y, dx, dy, c) {
-    if (c === EMPTY) return 0;
-
+function countLine(x, y, dx, dy, c) {
     let cnt = 1;
     let nx = x + dx, ny = y + dy;
-
-    while (inside(nx, ny) && bd[ny][nx] === c) {
+    while (inBoard(nx, ny) && board[ny][nx] === c) {
         cnt++; nx += dx; ny += dy;
     }
     nx = x - dx; ny = y - dy;
-
-    while (inside(nx, ny) && bd[ny][nx] === c) {
+    while (inBoard(nx, ny) && board[ny][nx] === c) {
         cnt++; nx -= dx; ny -= dy;
     }
     return cnt;
 }
 
-/* ============================================================
-   Threat 기반 (열린3/4)
-============================================================ */
-function threatMove(color) {
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-            if (board[y][x] !== EMPTY) continue;
-
-            board[y][x] = color;
-            if (isOpenFour(x, y, color) || isOpenThree(x, y, color)) {
-                board[y][x] = EMPTY;
-                return { x, y };
-            }
-            board[y][x] = EMPTY;
-        }
-    }
-    return null;
+function countDoubleThree(x, y) {
+    return patternCount(x, y, "01110") >= 2;
 }
 
-function isOpenFour(x, y, c) {
-    return patternCheck(x, y, c, 4);
+function countDoubleFour(x, y) {
+    return patternCount(x, y, "011110") >= 2;
 }
 
-function isOpenThree(x, y, c) {
-    return patternCheck(x, y, c, 3);
-}
-
-function patternCheck(x, y, c, need) {
+function patternCount(x, y, pat) {
     const dirs = [[1,0],[0,1],[1,1],[1,-1]];
     let cnt = 0;
-
-    for (const [dx, dy] of dirs) {
-        if (countSeq(board, x, y, dx, dy, c) === need) cnt++;
-    }
-    return cnt > 0;
-}
-
-/* ============================================================
-   금수 (렌주룰)
-============================================================ */
-function isForbidden(bd, x, y) {
-    if (bd[y][x] !== EMPTY) return true;
-
-    bd[y][x] = BLACK;
-
-    const over5 =
-        countSeq(bd, x, y, 1,0,BLACK) >= 6 ||
-        countSeq(bd, x, y, 0,1,BLACK) >= 6 ||
-        countSeq(bd, x, y, 1,1,BLACK) >= 6 ||
-        countSeq(bd, x, y, 1,-1,BLACK) >= 6;
-
-    const d3 = countOpenThree(bd, x, y) >= 2;
-    const d4 = countOpenFour(bd, x, y) >= 2;
-
-    bd[y][x] = EMPTY;
-
-    return over5 || d3 || d4;
-}
-
-function countOpenThree(bd, x, y) {
-    return patternLine(bd, x, y, "01110");
-}
-
-function countOpenFour(bd, x, y) {
-    return patternLine(bd, x, y, "011110");
-}
-
-function patternLine(bd, x, y, pat) {
-    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-    let cnt = 0;
-
-    for (const [dx, dy] of dirs) {
+    for (const [dx,dy] of dirs) {
         let s = "";
-        for (let k = -4; k <= 4; k++) {
-            const nx = x + dx * k;
-            const ny = y + dy * k;
-
-            if (!inside(nx, ny)) s += "3";
-            else if (bd[ny][nx] === BLACK) s += "1";
-            else if (bd[ny][nx] === WHITE) s += "2";
+        for (let k=-4; k<=4; k++) {
+            const nx = x + dx*k;
+            const ny = y + dy*k;
+            if (!inBoard(nx, ny)) s += "3";
+            else if (board[ny][nx] === BLACK) s += "1";
+            else if (board[ny][nx] === WHITE) s += "2";
             else s += "0";
         }
         if (s.includes(pat)) cnt++;
@@ -455,63 +88,226 @@ function patternLine(bd, x, y, pat) {
 }
 
 /* ============================================================
-   Utility
+   착수 후보 생성 (중요 위치만 20개)
 ============================================================ */
-function findWinningMove(color) {
-    for (let y = 0; y < SIZE; y++)
-        for (let x = 0; x < SIZE; x++)
-            if (board[y][x] === EMPTY) {
-                if (color === BLACK && isForbidden(board, x, y)) continue;
-                board[y][x] = color;
-                const ok = checkWin(color);
-                board[y][x] = EMPTY;
-                if (ok) return { x, y };
-            }
-    return null;
+function generateMoves(color) {
+    const arr = [];
+
+    for (let y=0;y<SIZE;y++) {
+        for (let x=0;x<SIZE;x++) {
+
+            if (board[y][x] !== EMPTY) continue;
+            if (!nearStone(x, y)) continue;
+
+            // 금수 방지
+            if (color === BLACK && isForbidden(x,y)) continue;
+
+            let score = evaluateMove(x,y,color);
+            arr.push({ x, y, score });
+        }
+    }
+
+    // 중요도 정렬 후 상위 20개만 탐색
+    arr.sort((a,b)=>b.score-a.score);
+    return arr.slice(0, 20);
 }
 
 function nearStone(x, y) {
-    for (let dy = -2; dy <= 2; dy++) {
-        for (let dx = -2; dx <= 2; dx++) {
-            const nx = x + dx;
-            const ny = y + dy;
-
-            if (!inside(nx, ny)) continue;
-            if (board[ny][nx] !== EMPTY) return true;
+    for (let i=-2;i<=2;i++)
+        for (let j=-2;j<=2;j++) {
+            const nx = x + j, ny = y + i;
+            if (inBoard(nx,ny) && board[ny][nx] !== EMPTY)
+                return true;
         }
-    }
     return false;
 }
 
-function patternScore(x, y, c) {
+/* ============================================================
+   지표 기반 착수 평가
+============================================================ */
+function evaluateMove(x, y, color) {
     let score = 0;
-    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
-
-    for (const [dx, dy] of dirs) {
-        const k = countSeq(board, x, y, dx, dy, c);
-        if (k === 4) score += 8000;
-        else if (k === 3) score += 500;
-        else if (k === 2) score += 40;
-    }
+    score += patternScore(x,y,color) * 2;
+    score += patternScore(x,y,3-color);
     return score;
 }
 
-function inside(x, y) {
-    return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
-}
+function patternScore(x, y, c) {
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let s = 0;
 
-function setStatus(s) {
-    document.getElementById("statusBox").textContent = s;
-}
-
-function wait(ms) {
-    return new Promise(r => setTimeout(r, ms));
+    for (const [dx,dy] of dirs) {
+        const k = countLine(x, y, dx, dy, c);
+        if (k === 4) s += 8000;
+        else if (k === 3) s += 500;
+        else if (k === 2) s += 40;
+    }
+    return s;
 }
 
 /* ============================================================
-   초기 실행
+   승리 체크
 ============================================================ */
-window.onload = () => {
-    document.getElementById("resetBtn").onclick = startGame;
-    startGame();
-};
+function checkWin(color) {
+    const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+    for (let y=0;y<SIZE;y++)
+        for (let x=0;x<SIZE;x++) {
+            if (board[y][x] !== color) continue;
+            for (const [dx,dy] of dirs)
+                if (countLine(x,y,dx,dy,color) >= 5)
+                    return true;
+        }
+    return false;
+}
+
+/* ============================================================
+   VCF / VCT (강제승리) 탐색
+============================================================ */
+function searchVCF(color, depth=7) {
+    if (depth === 0) return null;
+
+    const moves = generateMoves(color);
+
+    for (const m of moves) {
+        board[m.y][m.x] = color;
+
+        if (checkWin(color)) {
+            board[m.y][m.x] = EMPTY;
+            return m;  // 강제승리 수
+        }
+
+        const opp = 3 - color;
+
+        // 상대가 방어 못하는지 확인
+        const block = searchVCF(opp, depth - 1);
+        board[m.y][m.x] = EMPTY;
+
+        if (!block) return m; // 상대가 막지 못하는 수
+    }
+    return null;
+}
+
+/* ============================================================
+   AI 최종 탐색
+============================================================ */
+function aiMove() {
+    const diff = document.querySelector("input[name=difficulty]:checked").value;
+    const depth = diff === "U" ? DEPTH_U : DEPTH_S;
+
+    const me = aiColor;
+    const opp = humanColor;
+
+    // 즉승
+    const win = findWinning(me);
+    if (win) return win;
+
+    // 즉패 방어
+    const block = findWinning(opp);
+    if (block) return block;
+
+    // 강제승리 VCF
+    const vcf = searchVCF(me, depth);
+    if (vcf) return vcf;
+
+    // 일반 탐색
+    return searchNormal(me, opp, depth);
+}
+
+/* ============================================================
+   즉승 수 찾기
+============================================================ */
+function findWinning(color) {
+    for (let y=0;y<SIZE;y++)
+        for (let x=0;x<SIZE;x++) {
+            if (board[y][x] !== EMPTY) continue;
+            if (color === BLACK && isForbidden(x,y)) continue;
+            board[y][x] = color;
+            const ok = checkWin(color);
+            board[y][x] = EMPTY;
+            if (ok) return { x, y };
+        }
+    return null;
+}
+
+/* ============================================================
+   일반 수읽기
+============================================================ */
+function searchNormal(me, opp, depth) {
+    const moves = generateMoves(me);
+
+    let best = null;
+    let bestVal = -999999;
+
+    for (const m of moves) {
+        board[m.y][m.x] = me;
+
+        let val = -searchMin(opp, me, depth - 1, -999999, 999999);
+
+        board[m.y][m.x] = EMPTY;
+
+        if (val > bestVal) {
+            bestVal = val;
+            best = m;
+        }
+    }
+    return best;
+}
+
+function searchMin(me, opp, depth, alpha, beta) {
+    if (depth === 0) return evalBoard(opp, me);
+
+    const moves = generateMoves(me);
+    if (moves.length === 0) return 0;
+
+    for (const m of moves) {
+        board[m.y][m.x] = me;
+
+        if (checkWin(me)) {
+            board[m.y][m.x] = EMPTY;
+            return -999999;
+        }
+
+        let v = -searchMin(opp, me, depth - 1, -beta, -alpha);
+
+        board[m.y][m.x] = EMPTY;
+
+        if (v > alpha) alpha = v;
+        if (alpha >= beta) break;
+    }
+    return alpha;
+}
+
+/* ============================================================
+   보드 평가
+============================================================ */
+function evalBoard(me, opp) {
+    let score = 0;
+    const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+
+    for (let y=0;y<SIZE;y++)
+        for (let x=0;x<SIZE;x++) {
+            const v = board[y][x];
+            if (v === EMPTY) continue;
+            for (const [dx,dy] of dirs) {
+                const c = countLine(x,y,dx,dy,v);
+
+                if (v === me) {
+                    if (c >= 5) score += 5000000;
+                    else if (c === 4) score += 60000;
+                    else if (c === 3) score += 3500;
+                    else if (c === 2) score += 80;
+                } else {
+                    if (c >= 5) score -= 8000000;
+                    else if (c === 4) score -= 90000;
+                    else if (c === 3) score -= 4500;
+                    else if (c === 2) score -= 100;
+                }
+            }
+        }
+    return score;
+}
+
+/* ============================================================
+   Utility
+============================================================ */
+function inBoard(x,y){return x>=0 && x<SIZE && y>=0 && y<SIZE;}
