@@ -378,6 +378,29 @@ function countOpenPattern(x,y,pat) {
 }
 
 /* ============================================================
+   즉승 수 찾기 (findWinning)
+============================================================ */
+function findWinning(color) {
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+
+            if (board[y][x] !== EMPTY) continue;
+
+            // 흑이면 금수 검사
+            if (color === BLACK && isForbidden(x, y)) continue;
+
+            board[y][x] = color;
+            const ok = checkWin(color);
+            board[y][x] = EMPTY;
+
+            if (ok) return { x, y };
+        }
+    }
+    return null;
+}
+
+
+/* ============================================================
    유틸
 ============================================================ */
 function inside(x,y){return x>=0 && x<SIZE && y>=0 && y<SIZE;}
@@ -391,3 +414,4 @@ window.onload = () => {
     document.getElementById("resetBtn").onclick = startGame;
     startGame();
 };
+
