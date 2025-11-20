@@ -61,7 +61,17 @@ function renderBoard() {
             p.dataset.x = x;
             p.dataset.y = y;
 
-            p.addEventListener("click", onHumanClick);
+            // 교차점 클릭 / 터치 등록
+           if ("ontouchstart" in window) {
+               // 모바일 → touchstart만 사용 (click 제거)
+               p.addEventListener("touchstart", onHumanClick, { passive: true });
+           } else {
+               // PC → click만 사용
+               p.addEventListener("click", onHumanClick);
+}
+
+wrap.appendChild(p);
+
 
             wrap.appendChild(p);
 
@@ -435,4 +445,5 @@ window.onload = () => {
     document.getElementById("resetBtn").onclick = startGame;
     startGame();
 };
+
 
