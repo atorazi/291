@@ -35,15 +35,16 @@ h1 {
 
 /* 15×15 그리드 */
 #board {
-    width: 560px; 
+    width: 560px;
     height: 560px;
     display: grid;
-    grid-template-columns: repeat(14, 40px);
-    grid-template-rows: repeat(14, 40px);
+    grid-template-columns: repeat(15, 40px);
+    grid-template-rows: repeat(15, 40px);
     background: #11234a;
     border: 1px solid #1e396e;
     position: relative;
 }
+
 
 /* 세로선 */
 #board::before {
