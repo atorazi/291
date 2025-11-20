@@ -1,57 +1,36 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="utf-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- 모바일 확대 허용 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚫ 오목 AI (렌주룰)</title>
+<link rel="stylesheet" href="style.css">
 
-    <title>⚫ 오목 AI (렌주룰)</title>
-
-    <!-- 외부 CSS -->
-    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-    <h1>⚫ 오목 AI (렌주룰)</h1>
+<h1>⚫ 오목 AI (렌주룰)</h1>
 
-    <!-- 옵션 바 -->
-    <div class="option-bar">
-        <label>
-            <input type="radio" name="firstPlayer" value="human" checked>
-            사람이 흑(선공)
-        </label>
+<div class="option-bar">
+    <label><input type="radio" name="firstPlayer" value="human" checked> 사람이 흑(선공)</label>
+    <label><input type="radio" name="firstPlayer" value="ai"> AI 선공</label>
 
-        <label>
-            <input type="radio" name="firstPlayer" value="ai">
-            AI 선공
-        </label>
+    <span style="width:20px; display:inline-block;"></span>
 
-        <span style="width:20px; display:inline-block;"></span>
+    <label><input type="radio" name="difficulty" value="S" checked> 보통(S)</label>
+    <label><input type="radio" name="difficulty" value="U"> 어려움(U)</label>
 
-        <label>
-            <input type="radio" name="difficulty" value="S" checked>
-            보통(S)
-        </label>
+    <button id="resetBtn">새 게임</button>
+</div>
 
-        <label>
-            <input type="radio" name="difficulty" value="U">
-            어려움(U)
-        </label>
+<div id="statusBox">준비 중...</div>
 
-        <button id="resetBtn">새 게임</button>
-    </div>
+<div id="boardWrapper">
+    <div id="board"></div>
+</div>
 
-    <!-- 상태창 -->
-    <div id="statusBox">준비 중...</div>
+<script src="omok.js"></script>
 
-    <!-- 보드 -->
-    <div id="boardWrapper">
-        <div id="board"></div>
-    </div>
-
-    <!-- JS -->
-    <script src="omok.js"></script>
 </body>
 </html>
