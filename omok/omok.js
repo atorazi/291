@@ -1,5 +1,5 @@
 /* ============================================================
-   Ultra Renju AI (VCF/VCT + 금수 + 교차점 렌더 안정판)
+   Ultra Renju AI (VCF/VCT + 금수 + 교차점 위치 정확판)
 ============================================================ */
 
 const SIZE = 15;
@@ -14,35 +14,50 @@ let aiColor = WHITE;
 let gameOver = false;
 
 /* ============================================================
-   초기 보드
+   공통 유틸
+============================================================ */
+function inside(x, y) {
+    return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
+}
+
+function setStatus(s) {
+    document.getElementById("statusBox").textContent = s;
+}
+
+function wait(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+/* ============================================================
+   보드 초기화
 ============================================================ */
 function initBoard() {
     board = Array.from({ length: SIZE }, () => Array(SIZE).fill(EMPTY));
 }
 
 /* ============================================================
-   렌더 (교차점 기반)
+   보드 렌더링 (교차점 절대좌표 계산)
 ============================================================ */
 function renderBoard() {
     const wrap = document.getElementById("board");
     wrap.innerHTML = "";
 
-    const cell = 100 / (SIZE - 1);   // 16×16 교차점 → size-1
+    const gap = wrap.clientWidth / (SIZE - 1);  // 교차점 간격(px)
 
     for (let y = 0; y < SIZE; y++) {
         for (let x = 0; x < SIZE; x++) {
 
             const p = document.createElement("div");
             p.className = "point";
-            p.style.left = x * cell + "%";
-            p.style.top = y * cell + "%";
+            p.style.left = (x * gap) + "px";
+            p.style.top = (y * gap) + "px";
+
             p.dataset.x = x;
             p.dataset.y = y;
 
-            // 클릭은 무조건 currentTarget 사용
             p.addEventListener("click", onHumanClick);
 
-            // 돌
+            // 돌 표시
             const v = board[y][x];
             if (v !== EMPTY) {
                 const s = document.createElement("div");
@@ -50,7 +65,7 @@ function renderBoard() {
                 p.appendChild(s);
             }
 
-            // 금수
+            // 금수 표시
             if (turn === BLACK && v === EMPTY && isForbidden(x, y)) {
                 const f = document.createElement("div");
                 f.className = "forbid";
@@ -70,7 +85,6 @@ function onHumanClick(e) {
     if (gameOver) return;
     if (turn !== humanColor) return;
 
-    // 반드시 currentTarget 사용해야 착수 정상
     const x = Number(e.currentTarget.dataset.x);
     const y = Number(e.currentTarget.dataset.y);
 
@@ -104,7 +118,7 @@ function startGame() {
 
     const fp = document.querySelector("input[name=firstPlayer]:checked").value;
     humanColor = fp === "human" ? BLACK : WHITE;
-    aiColor = (humanColor === BLACK ? WHITE : BLACK);
+    aiColor = humanColor === BLACK ? WHITE : BLACK;
 
     turn = BLACK;
 
@@ -116,14 +130,14 @@ function startGame() {
 }
 
 /* ============================================================
-   AI 시작
+   AI 메인
 ============================================================ */
 async function aiStart() {
     if (gameOver) return;
 
-    await wait(70);
+    await wait(80);
 
-    // 첫 수는 중앙
+    // 첫 수 → 중앙 고정
     if (board.flat().every(v => v === EMPTY)) {
         board[7][7] = aiColor;
         turn = humanColor;
@@ -132,6 +146,7 @@ async function aiStart() {
     }
 
     const mv = aiMove();
+
     if (!mv) {
         setStatus("무승부");
         gameOver = true;
@@ -152,7 +167,7 @@ async function aiStart() {
 }
 
 /* ============================================================
-   AI 메인
+   AI 선택 로직 (VCF/VCT + 금수 완전지원)
 ============================================================ */
 function aiMove() {
     const diff = document.querySelector("input[name=difficulty]:checked").value;
@@ -169,7 +184,7 @@ function aiMove() {
     let b = findWinning(opp);
     if (b) return b;
 
-    // VCF / VCT
+    // VCF/VCT (강제승리)
     let vcf = searchVCF(me, depth);
     if (vcf) return vcf;
 
@@ -178,7 +193,7 @@ function aiMove() {
 }
 
 /* ============================================================
-   VCF / VCT
+   VCF / VCT 탐색
 ============================================================ */
 function searchVCF(color, depth) {
     if (depth <= 0) return null;
@@ -210,12 +225,12 @@ function searchNormal(me, opp, depth) {
     const moves = generateMoves(me);
 
     let best = null;
-    let bestVal = -9999999;
+    let bestVal = -99999999;
 
     for (const mv of moves) {
         board[mv.y][mv.x] = me;
 
-        const val = -minSearch(opp, me, depth - 1, -9999999, 9999999);
+        const val = -minSearch(opp, me, depth - 1, -99999999, 99999999);
 
         board[mv.y][mv.x] = EMPTY;
 
@@ -252,7 +267,7 @@ function minSearch(me, opp, depth, alpha, beta) {
 }
 
 /* ============================================================
-   후보군 생성
+   후보 수 생성
 ============================================================ */
 function generateMoves(color) {
     const arr = [];
@@ -260,13 +275,13 @@ function generateMoves(color) {
     for (let y = 0; y < SIZE; y++) {
         for (let x = 0; x < SIZE; x++) {
             if (board[y][x] !== EMPTY) continue;
+
             if (!nearStone(x, y)) continue;
 
-            // 금수 제외
             if (color === BLACK && isForbidden(x, y)) continue;
 
-            const score = moveScore(x, y, color);
-            arr.push({ x, y, score });
+            const s = moveScore(x, y, color);
+            arr.push({ x, y, score: s });
         }
     }
 
@@ -285,7 +300,7 @@ function nearStone(x, y) {
 }
 
 /* ============================================================
-   평가 보조
+   평가 함수
 ============================================================ */
 function moveScore(x, y, c) {
     let s = patternScore(x, y, c) * 2;
@@ -299,6 +314,7 @@ function patternScore(x, y, c) {
 
     for (const [dx, dy] of dirs) {
         const len = countLine(x, y, dx, dy, c);
+
         if (len === 4) score += 8000;
         else if (len === 3) score += 500;
         else if (len === 2) score += 40;
@@ -322,6 +338,9 @@ function countLine(x, y, dx, dy, c) {
     return cnt;
 }
 
+/* ============================================================
+   승리 판정
+============================================================ */
 function checkWin(c) {
     return (
         checkDir(c, 1, 0) ||
@@ -340,14 +359,14 @@ function checkDir(c, dx, dy) {
 }
 
 /* ============================================================
-   금수 판정
+   금수 판정 (렌주룰)
 ============================================================ */
 function isForbidden(x, y) {
     if (board[y][x] !== EMPTY) return false;
 
     board[y][x] = BLACK;
 
-    const over =
+    const overline =
         countLine(x, y, 1, 0, BLACK) >= 6 ||
         countLine(x, y, 0, 1, BLACK) >= 6 ||
         countLine(x, y, 1, 1, BLACK) >= 6 ||
@@ -357,21 +376,22 @@ function isForbidden(x, y) {
     const d4 = countOpenPattern(x, y, "011110") >= 2;
 
     board[y][x] = EMPTY;
-    return over || d3 || d4;
+    return overline || d3 || d4;
 }
 
 function countOpenPattern(x, y, pat) {
-    const dirs=[[1,0],[0,1],[1,1],[1,-1]];
-    let cnt=0;
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    let cnt = 0;
 
-    for (const [dx,dy] of dirs) {
-        let s="";
-        for (let k=-4;k<=4;k++) {
-            const nx=x+dx*k, ny=y+dy*k;
-            if (!inside(nx,ny)) s+="3";
-            else if (board[ny][nx] === BLACK) s+="1";
-            else if (board[ny][nx] === WHITE) s+="2";
-            else s+="0";
+    for (const [dx, dy] of dirs) {
+        let s = "";
+        for (let k = -4; k <= 4; k++) {
+            const nx = x + dx * k, ny = y + dy * k;
+
+            if (!inside(nx, ny)) s += "3";
+            else if (board[ny][nx] === BLACK) s += "1";
+            else if (board[ny][nx] === WHITE) s += "2";
+            else s += "0";
         }
         if (s.includes(pat)) cnt++;
     }
@@ -382,10 +402,11 @@ function countOpenPattern(x, y, pat) {
    즉승 판단
 ============================================================ */
 function findWinning(color) {
-    for (let y=0;y<SIZE;y++)
-        for (let x=0;x<SIZE;x++) {
+    for (let y = 0; y < SIZE; y++)
+        for (let x = 0; x < SIZE; x++) {
             if (board[y][x] !== EMPTY) continue;
-            if (color === BLACK && isForbidden(x,y)) continue;
+
+            if (color === BLACK && isForbidden(x, y)) continue;
 
             board[y][x] = color;
             const ok = checkWin(color);
@@ -395,44 +416,6 @@ function findWinning(color) {
         }
     return null;
 }
-
-/* ============================================================
-   평가 함수
-============================================================ */
-function evalBoard(me, opp) {
-    let score=0;
-    const dirs=[[1,0],[0,1],[1,1],[1,-1]];
-
-    for (let y=0;y<SIZE;y++)
-        for (let x=0;x<SIZE;x++) {
-            const v = board[y][x];
-            if (v === EMPTY) continue;
-
-            for (const [dx,dy] of dirs) {
-                const len = countLine(x,y,dx,dy,v);
-
-                if (v === me) {
-                    if (len >= 5) score += 5000000;
-                    else if (len === 4) score += 60000;
-                    else if (len === 3) score += 3500;
-                    else if (len === 2) score += 80;
-                } else {
-                    if (len >= 5) score -= 8000000;
-                    else if (len === 4) score -= 90000;
-                    else if (len === 3) score -= 4500;
-                    else if (len === 2) score -= 100;
-                }
-            }
-        }
-    return score;
-}
-
-/* ============================================================
-   공통 유틸
-============================================================ */
-function inside(x,y){return x>=0 && x<SIZE && y>=0 && y<SIZE;}
-function setStatus(s){document.getElementById("statusBox").textContent=s;}
-function wait(ms){return new Promise(r=>setTimeout(r,ms));}
 
 /* ============================================================
    초기 실행
