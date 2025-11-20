@@ -1,129 +1,103 @@
+/* 화면 기본 */
 body {
-    margin: 0;
-    padding: 0;
-    background: #0b1220;
-    color: #fff;
-    font-family: "Pretendard", sans-serif;
-    text-align: center;
+  margin: 0;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", system-ui, sans-serif;
+  background: #111827;
+  color: #e5e7eb;
 }
 
 h1 {
-    margin-top: 15px;
-    color: #ffd447;
-    font-size: 26px;
+  margin: 0 0 16px;
+  text-align: center;
+  color: #fbbf24;
 }
 
+/* 옵션 바 */
 .option-bar {
-    margin: 12px auto;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  justify-content: center;
 }
 
 .option-bar label {
-    cursor: pointer;
+  font-size: 14px;
 }
 
-#resetBtn {
-    padding: 6px 12px;
-    border: none;
-    background: #ffd447;
-    color: #000;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
+.option-bar button {
+  margin-left: 12px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+.option-bar button:hover {
+  background: #1d4ed8;
 }
 
+/* 상태창 */
 #statusBox {
-    margin: 8px auto;
-    padding: 8px 12px;
-    width: min(90%, 600px);
-    background: #11234a;
-    border-left: 6px solid #ffd447;
-    border-radius: 6px;
-    text-align: left;
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 14px;
 }
 
-/* 보드 */
+/* 보드 래퍼 */
 #boardContainer {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 #boardWrapper {
-    position: relative;
-    width: min(95vw, 600px);
-    height: min(95vw, 600px);
+  background: #fbbf24;
+  padding: 10px;
+  border-radius: 8px;
 }
 
+/* 오목판 */
 #board {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-
-    background: #b67a3d;
-    border: 10px solid #dba56a;
-    border-radius: 10px;
-
-    background-image:
-        linear-gradient(#000 2px, transparent 2px),
-        linear-gradient(90deg, #000 2px, transparent 2px);
-
-    background-size: calc(100% / 14) calc(100% / 14);
+  border-collapse: collapse;
 }
 
-/* 클릭 지점 */
-.point {
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
+#board td {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #b45309;
+  background: #f59e0b;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
 }
 
 /* 돌 */
-.stone {
-    position: absolute;
-    width: 42px;
-    height: 42px;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
+#board td.black::after,
+#board td.white::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
 }
 
-.stone.black {
-    background: radial-gradient(circle at 30% 30%, #555, #000);
+#board td.black::after {
+  background: #111827;
+  box-shadow: 0 0 4px rgba(0,0,0,.7);
 }
 
-.stone.white {
-    background: radial-gradient(circle at 30% 30%, #fff, #ccc);
-}
-
-/* Hover */
-#ghostStone {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    opacity: 0;
-    pointer-events: none;
-}
-
-#ghostStone.black {
-    background: rgba(0,0,0,0.35);
-}
-
-#ghostStone.white {
-    background: rgba(255,255,255,0.45);
+#board td.white::after {
+  background: #f9fafb;
+  box-shadow: 0 0 4px rgba(0,0,0,.4);
 }
 
 /* 금수 */
-.ban {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    color: red;
-    font-weight: bold;
-    font-size: 20px;
+#board td.forbid {
+  color: #b91c1c;
+  font-weight: bold;
 }
