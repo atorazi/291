@@ -1,61 +1,57 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
+    <meta charset="utf-8">
 
-<!-- 모바일 확대 허용 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 모바일 확대 허용 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>⚫ 오목 AI (렌주룰 + Ultra AI)</title>
+    <title>⚫ 오목 AI (렌주룰)</title>
 
-<!-- 너의 CSS 그대로 사용 -->
-<link rel="stylesheet" href="style.css">
-
+    <!-- 외부 CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1>⚫ 오목 AI (렌주룰)</h1>
+    <h1>⚫ 오목 AI (렌주룰)</h1>
 
-<!-- 옵션 바 -->
-<div class="option-bar">
-    <label>
-        <input type="radio" name="firstPlayer" value="human" checked>
-        사람이 흑(선공)
-    </label>
+    <!-- 옵션 바 -->
+    <div class="option-bar">
+        <label>
+            <input type="radio" name="firstPlayer" value="human" checked>
+            사람이 흑(선공)
+        </label>
 
-    <label>
-        <input type="radio" name="firstPlayer" value="ai">
-        AI 선공
-    </label>
+        <label>
+            <input type="radio" name="firstPlayer" value="ai">
+            AI 선공
+        </label>
 
-    <span style="width:20px; display:inline-block;"></span>
+        <span style="width:20px; display:inline-block;"></span>
 
-    <label>
-        <input type="radio" name="difficulty" value="S" checked>
-        보통(S)
-    </label>
+        <label>
+            <input type="radio" name="difficulty" value="S" checked>
+            보통(S)
+        </label>
 
-    <label>
-        <input type="radio" name="difficulty" value="U">
-        어려움(U)
-    </label>
+        <label>
+            <input type="radio" name="difficulty" value="U">
+            어려움(U)
+        </label>
 
-    <button id="resetBtn">새 게임</button>
-</div>
-
-<!-- 상태 -->
-<div id="statusBox">준비 중...</div>
-
-<!-- 보드 -->
-<div id="boardContainer">
-    <div id="boardWrapper">
-        <table id="board"></table>
+        <button id="resetBtn">새 게임</button>
     </div>
-</div>
 
-<!-- 최신 안정판 Ultra Renju AI -->
-<script src="omok.js"></script>
+    <!-- 상태창 -->
+    <div id="statusBox">준비 중...</div>
 
+    <!-- 보드 -->
+    <div id="boardWrapper">
+        <div id="board"></div>
+    </div>
+
+    <!-- JS -->
+    <script src="omok.js"></script>
 </body>
 </html>
