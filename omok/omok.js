@@ -42,38 +42,49 @@ function renderBoard() {
     const wrap = document.getElementById("board");
     wrap.innerHTML = "";
 
-    const gap = wrap.clientWidth / (SIZE - 1);  // 교차점 간격(px)
+    const size = SIZE - 1;
+    const gap = wrap.clientWidth / size; // 교차점 간격(px)
 
     for (let y = 0; y < SIZE; y++) {
         for (let x = 0; x < SIZE; x++) {
 
+            // 교차점 클릭 레이어
             const p = document.createElement("div");
             p.className = "point";
-            p.style.left = (x * gap) + "px";
-            p.style.top = (y * gap) + "px";
+
+            const px = x * gap;
+            const py = y * gap;
+
+            p.style.left = px + "px";
+            p.style.top  = py + "px";
 
             p.dataset.x = x;
             p.dataset.y = y;
 
             p.addEventListener("click", onHumanClick);
 
-            // 돌 표시
+            wrap.appendChild(p);
+
             const v = board[y][x];
+
+            // --- 돌 렌더링 ---
             if (v !== EMPTY) {
                 const s = document.createElement("div");
                 s.className = "stone " + (v === BLACK ? "black" : "white");
-                p.appendChild(s);
+                s.style.left = px + "px";
+                s.style.top  = py + "px";
+                wrap.appendChild(s);
             }
 
-            // 금수 표시
+            // --- 금수 렌더링 ---
             if (turn === BLACK && v === EMPTY && isForbidden(x, y)) {
                 const f = document.createElement("div");
                 f.className = "forbid";
                 f.textContent = "X";
-                p.appendChild(f);
+                f.style.left = px + "px";
+                f.style.top  = py + "px";
+                wrap.appendChild(f);
             }
-
-            wrap.appendChild(p);
         }
     }
 }
@@ -424,3 +435,4 @@ window.onload = () => {
     document.getElementById("resetBtn").onclick = startGame;
     startGame();
 };
+
