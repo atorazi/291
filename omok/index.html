@@ -3,33 +3,39 @@
 <head>
 <meta charset="utf-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<!-- 모바일 확대 허용 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>⚫ 오목 AI (렌주룰)</title>
 
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
+
 <h1>⚫ 오목 AI (렌주룰)</h1>
 
+<!-- 옵션 바 -->
 <div class="option-bar">
     <label><input type="radio" name="firstPlayer" value="human" checked> 사람이 흑(선공)</label>
     <label><input type="radio" name="firstPlayer" value="ai"> AI 선공</label>
 
-    <span style="margin:0 10px;"></span>
+    <span style="width:20px; display:inline-block;"></span>
 
-    <label><input type="radio" name="difficulty" value="normal" checked> 보통</label>
-    <label><input type="radio" name="difficulty" value="hard"> 어려움</label>
+    <label><input type="radio" name="difficulty" value="S" checked> 보통(S)</label>
+    <label><input type="radio" name="difficulty" value="U"> 어려움(U)</label>
 
     <button id="resetBtn">새 게임</button>
 </div>
 
+<!-- 상태 -->
 <div id="statusBox">준비 중...</div>
 
+<!-- 보드 -->
 <div id="boardContainer">
     <div id="boardWrapper">
-        <div id="board"></div>
-        <div id="ghostStone"></div>
+        <table id="board"></table>
     </div>
 </div>
 
