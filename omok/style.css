@@ -14,7 +14,6 @@ h1 {
     display: flex;
     justify-content: center;
     gap: 16px;
-    flex-wrap: wrap;
     margin-bottom: 12px;
 }
 
@@ -30,6 +29,7 @@ h1 {
     margin: auto;
 }
 
+/* 💎 핵심: 16×16 선 → 교차점 정확 */
 #board {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -37,33 +37,32 @@ h1 {
     position: relative;
 
     background-image:
-        linear-gradient(to right, #1e396e 2px, transparent 2px),
-        linear-gradient(to bottom, #1e396e 2px, transparent 2px);
+        linear-gradient(to right, #1e396e 1px, transparent 1px),
+        linear-gradient(to bottom, #1e396e 1px, transparent 1px);
+
+    /* 15개 칸 = 16개 선 */
     background-size: calc(100% / 15) calc(100% / 15);
 }
 
+/* 💎 클릭점: 작은 점으로 만들어야 교차점 정확 */
 .point {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     position: absolute;
-
-    /* 중심 정확히 */
     transform: translate(-50%, -50%);
-
     cursor: pointer;
-    z-index: 2; /* 클릭 우선순위 확보 */
+    z-index: 2;
 }
 
-/* 돌은 point 안이 아님 → 전부 개별 요소 */
+/* 💎 돌: 교차점 중심에 위치 */
 .stone {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     position: absolute;
     transform: translate(-50%, -50%);
     z-index: 3;
 }
-
 
 .black {
     background: #0b0f18;
@@ -77,8 +76,9 @@ h1 {
 
 .forbid {
     color: #ffd447;
-    font-size: 1.2em;
+    font-size: 20px;
     font-weight: bold;
     position: absolute;
     transform: translate(-50%, -50%);
+    z-index: 4;
 }
