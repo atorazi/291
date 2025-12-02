@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐂미노타우르스의 장난감</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg:#0b1426;
+            --panel:#0f1e3a;
+            --soft:#11234a;
+            --ring:#1e396e;
+            --ink:#eaf2ff;
+            --yellow:#ffd447;
+            --yellow-dark:#ccaa33;
+        }
+        body {
+            background:var(--bg);
+            color:var(--ink);
+            font-family:"Inter","Pretendard",sans-serif;
+            margin:0;
+            padding:16px;
+        }
+        .container {
+            display:flex;
+            gap:12px;
+            max-width:1800px;
+            margin:0 auto;
+            justify-content:center;
+        }
+        .box {
+            background:var(--panel);
+            border:1px solid var(--ring);
+            padding:12px;
+            border-radius:10px;
+            width:180px;
+            box-shadow:0 4px 6px rgba(0,0,0,0.2);
+            flex-shrink:0;
+            height:fit-content;
+        }
+        h2 {
+            margin:0 0 8px;
+            color:var(--yellow);
+            text-align:center;
+            font-size:1.3rem;
+        }
+        .row {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin:5px 0;
+        }
+        label {
+            width:60px;
+            font-size:13px;
+        }
+        input {
+            width:70px;
+            text-align:center;
+            padding:4px;
+            border-radius:5px;
+            border:1px solid var(--soft);
+            background:var(--soft);
+            color:var(--ink);
+            font-size:13px;
+        }
+        input[readonly] {
+            background:#0f1e3a;
+            color:#ccc;
+            border-color:#0f1e3a;
+        }
+        .section {
+            margin-top:10px;
+            font-size:13px;
+            font-weight:bold;
+            color:var(--yellow);
+            padding-bottom:3px;
+            border-bottom:1px solid var(--ring);
+        }
+        .calc-button {
+            margin-top:8px;
+            width:100%;
+            padding:8px;
+            border:0;
+            border-radius:6px;
+            background:var(--yellow);
+            color:#000;
+            font-weight:900;
+            cursor:pointer;
+            transition:background-color .2s, transform .1s;
+            box-shadow:0 4px 0 var(--yellow-dark);
+            font-size:13px;
+        }
+        .calc-button:hover { background:#ffec99; }
+        .calc-button:active {
+            transform:translateY(2px);
+            box-shadow:0 2px 0 var(--yellow-dark);
+        }
+        #bruteForceBox {
+            background:var(--panel);
+            border:1px solid var(--ring);
+            padding:16px;
+            border-radius:12px;
+            box-shadow:0 4px 6px rgba(0,0,0,0.2);
+            flex-grow:1;
+            max-width:700px;
+            position:relative;
+        }
+        #log {
+            padding:10px;
+            background:#00000066;
+            border-radius:8px;
+            height:250px;
+            overflow:auto;
+            white-space:pre-wrap;
+            font-size:12px;
+            border:1px solid #2d3748;
+            font-family:monospace;
+        }
+        #status-message {
+            position:absolute;
+            bottom:16px;
+            right:16px;
+            font-size:13px;
+            padding:5px 10px;
+            border-radius:6px;
+            background:#11234a;
+            color:var(--yellow);
+            opacity:0;
+            transition:opacity .5s;
+            z-index:10;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1 class="text-3xl font-bold"
+    style="color:var(--yellow); text-align:center; margin-bottom:12px;">
+    🐂 미노타우르스의 장난감
+</h1>
+
+<p style="text-align:center; color:#aaa; font-size:13px; margin-bottom:20px;">
+    안녕하세요?
+</p>
+
+<!-- ==========================================================
+     UI 영역 + 계산기 본체
+========================================================== -->
+<div class="container">
+
+    <!-- 🔵 0 → 1 -->
+    <div class="box">
+        <h2>0 → 1환</h2>
+
+        <div class="row"><label>초기</label><input id="base01" value="20"></div>
+        <div class="row"><label>레벨</label><input id="lv01" value="140" oninput="exeEngine.updateTotal(1)"></div>
+        <div class="row"><label>총 스탯</label><input id="total01" readonly></div>
+
+        <div class="section">투자 스탯</div>
+        <div class="row"><label>체력</label><input id="str01" value="44" oninput="exeEngine.updateRemain(1)"></div>
+        <div class="row"><label>완력</label><input id="pow01" value="377" oninput="exeEngine.updateRemain(1)"></div>
+        <div class="row"><label>건강</label><input id="vit01" value="0" oninput="exeEngine.updateRemain(1)"></div>
+        <div class="row"><label>순발</label><input id="agi01" value="16" oninput="exeEngine.updateRemain(1)"></div>
+        <div class="row"><label>잔여</label><input id="remain01" readonly></div>
+
+        <div class="section">환생 계산</div>
+        <div class="row"><label>퀘</label><input id="quest01" value="10"></div>
+        <div class="row"><label>FP</label><input id="fp01" readonly></div>
+
+        <button class="calc-button" onclick="exeEngine.calcStep(1)">0 → 1환 계산</button>
+
+        <div class="section">raw</div>
+        <div class="row"><label>체</label><input id="rawStr01" readonly></div>
+        <div class="row"><label>완</label><input id="rawPow01" readonly></div>
+        <div class="row"><label>건</label><input id="rawVit01" readonly></div>
+        <div class="row"><label>순</label><input id="rawAgi01" readonly></div>
+        <div class="row"><label>환포</label><input id="nextBase01" readonly></div>
+    </div>
+
+    <!-- 🔵 1 → 2 -->
+    <div class="box">
+        <h2>1 → 2환</h2>
+
+        <div class="row"><label>초기</label><input id="base12" readonly></div>
+        <div class="row"><label>레벨</label><input id="lv12" value="140" oninput="exeEngine.updateTotal(2)"></div>
+        <div class="row"><label>총 스탯</label><input id="total12" readonly></div>
+
+        <div class="section">투자</div>
+        <div class="row"><label>체</label><input id="str12" value="16" oninput="exeEngine.updateRemain(2)"></div>
+        <div class="row"><label>완</label><input id="pow12" value="460" oninput="exeEngine.updateRemain(2)"></div>
+        <div class="row"><label>건</label><input id="vit12" value="3" oninput="exeEngine.updateRemain(2)"></div>
+        <div class="row"><label>순</label><input id="agi12" value="3" oninput="exeEngine.updateRemain(2)"></div>
+        <div class="row"><label>잔여</label><input id="remain12" readonly></div>
+
+        <div class="section">환생</div>
+        <div class="row"><label>퀘</label><input id="quest12" value="20"></div>
+        <div class="row"><label>FP</label><input id="fp12" readonly></div>
+
+        <button class="calc-button" onclick="exeEngine.calcStep(2)">1 → 2환 계산</button>
+
+        <div class="section">raw</div>
+        <div class="row"><label>체</label><input id="rawStr12" readonly></div>
+        <div class="row"><label>완</label><input id="rawPow12" readonly></div>
+        <div class="row"><label>건</label><input id="rawVit12" readonly></div>
+        <div class="row"><label>순</label><input id="rawAgi12" readonly></div>
+        <div class="row"><label>환포</label><input id="nextBase12" readonly></div>
+    </div>
+
+    <!-- 🔵 2 → 3 -->
+    <div class="box">
+        <h2>2 → 3환</h2>
+
+        <div class="row"><label>초기</label><input id="base23" readonly></div>
+        <div class="row"><label>레벨</label><input id="lv23" value="140" oninput="exeEngine.updateTotal(3)"></div>
+        <div class="row"><label>총 스탯</label><input id="total23" readonly></div>
+
+        <div class="section">투자</div>
+        <div class="row"><label>체</label><input id="str23" value="13" oninput="exeEngine.updateRemain(3)"></div>
+        <div class="row"><label>완</label><input id="pow23" value="476" oninput="exeEngine.updateRemain(3)"></div>
+        <div class="row"><label>건</label><input id="vit23" value="13" oninput="exeEngine.updateRemain(3)"></div>
+        <div class="row"><label>순</label><input id="agi23" value="13" oninput="exeEngine.updateRemain(3)"></div>
+        <div class="row"><label>잔여</label><input id="remain23" readonly></div>
+
+        <div class="section">환생</div>
+        <div class="row"><label>퀘</label><input id="quest23" value="30"></div>
+        <div class="row"><label>FP</label><input id="fp23" readonly></div>
+
+        <button class="calc-button" onclick="exeEngine.calcStep(3)">2 → 3환 계산</button>
+
+        <div class="section">raw</div>
+        <div class="row"><label>체</label><input id="rawStr23" readonly></div>
+        <div class="row"><label>완</label><input id="rawPow23" readonly></div>
+        <div class="row"><label>건</label><input id="rawVit23" readonly></div>
+        <div class="row"><label>순</label><input id="rawAgi23" readonly></div>
+        <div class="row"><label>환포</label><input id="nextBase23" readonly></div>
+    </div>
+
+    <!-- 🔵 3 → 4 -->
+    <div class="box">
+        <h2>3 → 4환</h2>
+
+        <div class="row"><label>초기</label><input id="base34" readonly></div>
+        <div class="row"><label>레벨</label><input id="lv34" value="140" oninput="exeEngine.updateTotal(4)"></div>
+        <div class="row"><label>총 스탯</label><input id="total34" readonly></div>
+
+        <div class="section">투자</div>
+        <div class="row"><label>체</label><input id="str34" value="0" oninput="exeEngine.updateRemain(4)"></div>
+        <div class="row"><label>완</label><input id="pow34" value="547" oninput="exeEngine.updateRemain(4)"></div>
+        <div class="row"><label>건</label><input id="vit34" value="0" oninput="exeEngine.updateRemain(4)"></div>
+        <div class="row"><label>순</label><input id="agi34" value="0" oninput="exeEngine.updateRemain(4)"></div>
+        <div class="row"><label>잔여</label><input id="remain34" readonly></div>
+
+        <div class="section">환생</div>
+        <div class="row"><label>퀘</label><input id="quest34" value="40"></div>
+        <div class="row"><label>FP</label><input id="fp34" readonly></div>
+
+        <button class="calc-button" onclick="exeEngine.calcStep(4)">3 → 4환 계산</button>
+
+        <div class="section">raw</div>
+        <div class="row"><label>체</label><input id="rawStr34" readonly></div>
+        <div class="row"><label>완</label><input id="rawPow34" readonly></div>
+        <div class="row"><label>건</label><input id="rawVit34" readonly></div>
+        <div class="row"><label>순</label><input id="rawAgi34" readonly></div>
+        <div class="row"><label>환포</label><input id="nextBase34" readonly></div>
+    </div>
+
+    <!-- 🔵 4 → 5 -->
+    <div class="box">
+        <h2>4 → 5환</h2>
+
+        <div class="row"><label>초기</label><input id="base45" readonly></div>
+        <div class="row"><label>레벨</label><input id="lv45" value="140" oninput="exeEngine.updateTotal(5)"></div>
+        <div class="row"><label>총 스탯</label><input id="total45" readonly></div>
+
+        <div class="section">투자</div>
+        <div class="row"><label>체</label><input id="str45" value="2" oninput="exeEngine.updateRemain(5)"></div>
+        <div class="row"><label>완</label><input id="pow45" value="573" oninput="exeEngine.updateRemain(5)"></div>
+        <div class="row"><label>건</label><input id="vit45" value="0" oninput="exeEngine.updateRemain(5)"></div>
+        <div class="row"><label>순</label><input id="agi45" value="2" oninput="exeEngine.updateRemain(5)"></div>
+        <div class="row"><label>잔여</label><input id="remain45" readonly></div>
+
+        <div class="section">환생</div>
+        <div class="row"><label>퀘</label><input id="quest45" value="50"></div>
+        <div class="row"><label>FP</label><input id="fp45" readonly></div>
+
+        <button class="calc-button" onclick="exeEngine.calcStep(5)">4 → 5환 계산</button>
+
+        <div class="section">raw</div>
+        <div class="row"><label>체</label><input id="rawStr45" readonly></div>
+        <div class="row"><label>완</label><input id="rawPow45" readonly></div>
+        <div class="row"><label>건</label><input id="rawVit45" readonly></div>
+        <div class="row"><label>순</label><input id="rawAgi45" readonly></div>
+        <div class="row"><label>환포</label><input id="nextBase45" readonly></div>
+    </div>
+
+    <!-- 🔵 브루트포스 -->
+    <div id="bruteForceBox">
+        <h2 style="margin:0 0 10px; border-bottom:1px solid var(--ring); padding-bottom:10px;">
+            추천 스탯 리스트
+        </h2>
+
+        <div id="log">탐색 결과가 여기에 표시됩니다.</div>
+
+        <div style="margin-top:12px;">
+            <label style="font-size:13px;">주력 스탯</label>
+            <select id="mainStat" class="bg-blue-900 p-1 rounded text-sm">
+                <option value="pow">완력</option>
+                <option value="str">체력</option>
+                <option value="vit">건강</option>
+                <option value="agi">순발</option>
+            </select>
+
+            <div class="row">
+                <label style="white-space:nowrap;">비주력 제한</label>
+                <input id="maxOther" value="60">
+            </div>
+
+            <div class="row">
+                <label>최대 출력</label>
+                <input id="maxResult" value="10">
+            </div>
+
+            <button class="calc-button" onclick="exeEngine.searchNext(2,98)">1→2 next=98</button>
+            <button class="calc-button" onclick="exeEngine.searchNext(3,130)">2→3 next=130</button>
+            <button class="calc-button" onclick="exeEngine.searchNext(4,160)">3→4 next=160</button>
+            <button class="calc-button" onclick="exeEngine.searchNext(5,193)">4→5 next=193</button>
+
+            <div id="status-message"></div>
+        </div>
+    </div>
+</div>
+
+<footer style="
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    padding:8px 0;
+    text-align:center;
+    font-size:12px;
+    color:#aab7d1;
+    background:rgba(8,16,31,0.9);
+    border-top:1px solid #1e396e;
+    backdrop-filter:blur(6px);
+    z-index:9999;
+">
+    <span style="color:var(--yellow); font-weight:600;">MIT License</span> · 
+    © 2025 지원(sup_bot)
+</footer>
+
+<!-- ==========================================================
+     🔥 JavaScript — NovaSA 100% 동일 공식 엔진 🔥
+========================================================== -->
+<script>
+const exeEngine = {
+
+    n(v){ return Number(v) || 0; },
+    el(id){ return document.getElementById(id); },
+
+    /* -----------------------------
+       총 스탯 total 계산
+    ----------------------------- */
+    updateTotal(step){
+        const pf = step===1 ? "01" : (step-1)+""+step;
+        const base = this.n(this.el("base"+pf).value);
+        const lv   = this.n(this.el("lv"+pf).value);
+        this.el("total"+pf).value = base + (lv - 1) * 3;
+        this.updateRemain(step);
+    },
+
+    /* -----------------------------
+       잔여 스탯 remain 계산
+    ----------------------------- */
+    updateRemain(step){
+        const pf = step===1 ? "01" : (step-1)+""+step;
+
+        const total = this.n(this.el("total"+pf).value);
+        const used =
+            this.n(this.el("str"+pf).value) +
+            this.n(this.el("pow"+pf).value) +
+            this.n(this.el("vit"+pf).value) +
+            this.n(this.el("agi"+pf).value);
+
+        this.el("remain"+pf).value = total - used;
+    },
+
+    /* -----------------------------
+       FP 공식 (EXE/Nova 동일)
+    ----------------------------- */
+    calcFP(step){
+        const n = this.n;
+        const lv01 = n(this.el("lv01").value);
+        const lv12 = n(this.el("lv12").value);
+        const lv23 = n(this.el("lv23").value);
+        const lv34 = n(this.el("lv34").value);
+        const lv45 = n(this.el("lv45").value);
+
+        let L = 0;
+        if(step===1) L = lv01 - 85;
+        if(step===2) L = lv01 + lv12 - 170;
+        if(step===3) L = lv01 + lv12 + lv23 - 255;
+        if(step===4) L = lv01 + lv12 + lv23 + lv34 - 340;
+        if(step===5) L = lv01 + lv12 + lv23 + lv34 + lv45 - 425;
+
+        const pf = (step===1 ? "01" : (step-1)+""+step);
+        const quest = n(this.el("quest"+pf).value);
+        const denom = this.calcDenom(step);
+
+        return Math.floor( denom/12 + quest/2 + L/4 );
+    },
+
+    /* -----------------------------
+       denominator = total + carry
+    ----------------------------- */
+    calcDenom(step){
+        const pf = (step===1 ? "01" : (step-1)+""+step);
+        const total = this.n(this.el("total"+pf).value);
+        const c = this.carryHistory[step-1];
+        return total + c.str + c.pow + c.vit + c.agi;
+    },
+
+    /* -----------------------------
+       raw 공식 (NovaSA 원본)
+    ----------------------------- */
+    calcRaw(stat, carry, FP, denom){
+        return ((stat + carry) * FP / denom) + 0.5;
+    },
+
+    computeOne(stat, carry, FP, denom){
+        const raw = this.calcRaw(stat, carry, FP, denom);
+        const intVal = Math.floor(raw);
+        const newCarry = raw - intVal;
+        return { raw, intVal, newCarry };
+    },
+
+    /* =====================================================
+       🔥 단계별 계산 실행
+    ====================================================== */
+    calcStep(step){
+        const pf = (step===1 ? "01" : (step-1)+""+step);
+
+        if(this.n(this.el("remain"+pf).value) !== 0){
+            alert(`${step}단계: 남은 스탯이 0이어야 합니다.`);
+            return;
+        }
+
+        const stats = {
+            str: this.n(this.el("str"+pf).value),
+            pow: this.n(this.el("pow"+pf).value),
+            vit: this.n(this.el("vit"+pf).value),
+            agi: this.n(this.el("agi"+pf).value)
+        };
+
+        const prev = this.carryHistory[step-1];
+        const denom = this.calcDenom(step);
+        const FP = this.calcFP(step);
+
+        const r_str = this.computeOne(stats.str, prev.str, FP, denom);
+        const r_pow = this.computeOne(stats.pow, prev.pow, FP, denom);
+        const r_vit = this.computeOne(stats.vit, prev.vit, FP, denom);
+        const r_agi = this.computeOne(stats.agi, prev.agi, FP, denom);
+
+        this.el("fp"+pf).value = FP;
+
+        this.el("rawStr"+pf).value = r_str.raw.toFixed(4);
+        this.el("rawPow"+pf).value = r_pow.raw.toFixed(4);
+        this.el("rawVit"+pf).value = r_vit.raw.toFixed(4);
+        this.el("rawAgi"+pf).value = r_agi.raw.toFixed(4);
+
+        const nextBase =
+            r_str.intVal + r_pow.intVal + r_vit.intVal + r_agi.intVal +
+            step * 10;
+
+        this.el("nextBase"+pf).value = nextBase;
+
+        this.carryHistory[step] = {
+            str: r_str.newCarry,
+            pow: r_pow.newCarry,
+            vit: r_vit.newCarry,
+            agi: r_agi.newCarry
+        };
+
+        if(step < 5){
+            const npf = step+""+(step+1);
+            this.el("base"+npf).value = nextBase;
+            this.updateTotal(step+1);
+        }
+    },
+
+    /* -----------------------------
+       carry 기록
+    ----------------------------- */
+    carryHistory:{
+        0:{str:0,pow:0,vit:0,agi:0},
+        1:{str:0,pow:0,vit:0,agi:0},
+        2:{str:0,pow:0,vit:0,agi:0},
+        3:{str:0,pow:0,vit:0,agi:0},
+        4:{str:0,pow:0,vit:0,agi:0},
+        5:{str:0,pow:0,vit:0,agi:0},
+    },
+
+    /* =====================================================
+       브루트포스 탐색
+    ====================================================== */
+    logAppend(msg){
+        const b = this.el("log");
+        b.textContent += msg + "\n";
+        b.scrollTop = b.scrollHeight;
+    },
+
+    showStatus(msg){
+        const box = this.el("status-message");
+        box.textContent = msg;
+        box.style.opacity = 1;
+        setTimeout(()=>box.style.opacity=0,1200);
+    },
+
+    searchNext(step, targetNext){
+        this.logAppend(`===== [${step-1}→${step}] next=${targetNext} 탐색 시작 =====`);
+
+        const main = this.el("mainStat").value;
+        const maxResult = this.n(this.el("maxResult").value) || 10;
+
+        const pf = (step-1)+""+step;
+        const base = this.n(this.el("base"+pf).value);
+        const lv   = this.n(this.el("lv"+pf).value);
+        const total = base + (lv-1)*3;
+
+        const prev = this.carryHistory[step-1];
+        const quest = this.n(this.el("quest"+pf).value);
+
+        const other = ["str","pow","vit","agi"].filter(k=>k!==main);
+
+        let results = [];
+
+        for(let m=0; m<=total; m++){
+            for(let a=0; a<=total; a++){
+                for(let b=0; b<=total; b++){
+                    for(let c=0; c<=total; c++){
+
+                        if(m+a+b+c !== total) continue;
+
+                        let stats = {str:0,pow:0,vit:0,agi:0};
+                        stats[main] = m;
+                        stats[other[0]] = a;
+                        stats[other[1]] = b;
+                        stats[other[2]] = c;
+
+                        const denom = total + prev.str + prev.pow + prev.vit + prev.agi;
+                        const FP = Math.floor( denom/12 + quest/2 + 0 ); // L/4 제외 (brute simpl)
+
+                        const r1 = ((stats.str+prev.str)*FP/denom)+0.5;
+                        const r2 = ((stats.pow+prev.pow)*FP/denom)+0.5;
+                        const r3 = ((stats.vit+prev.vit)*FP/denom)+0.5;
+                        const r4 = ((stats.agi+prev.agi)*FP/denom)+0.5;
+
+                        const next =
+                            Math.floor(r1)+Math.floor(r2)+
+                            Math.floor(r3)+Math.floor(r4) +
+                            step*10;
+
+                        if(next == targetNext){
+                            results.push({stats, FP});
+                            if(results.length >= maxResult) break;
+                        }
+                    }
+                    if(results.length >= maxResult) break;
+                }
+                if(results.length >= maxResult) break;
+            }
+            if(results.length >= maxResult) break;
+        }
+
+        if(results.length === 0){
+            this.logAppend("결과 없음");
+            this.showStatus("0건");
+            return;
+        }
+
+        results.forEach((r,i)=>{
+            this.logAppend(
+                `[${i+1}] FP=${r.FP} | `
+                + `STR=${r.stats.str}, POW=${r.stats.pow}, `
+                + `VIT=${r.stats.vit}, AGI=${r.stats.agi}`
+            );
+        });
+
+        this.showStatus(`${results.length}건`);
+    }
+
+};
+
+/* ================================
+   페이지 로드시 total 자동계산
+================================ */
+window.onload = ()=>{
+    for(let i=1;i<=5;i++){
+        exeEngine.updateTotal(i);
+    }
+};
+</script>
+
+</body>
+</html>
