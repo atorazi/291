@@ -15,8 +15,8 @@
       border-radius: 12px;
       background: #000;
       position: relative;
-      margin:0;
-      padding:0;
+      margin: 0;
+      padding: 0;
     }
 
     #omokFrame {
@@ -47,7 +47,6 @@
       <button id="tabGrowth">📊 성장률 계산기</button>
       <button onclick="window.open('/291/simulator.html', '_blank')">⚔️ 전투 시뮬레이터</button>
       <button onclick="window.open('/291/omok/index.html', '_blank')">⭕ 오목 AI</button>
-
     </nav>
 
     <!-- 📈 오른쪽 콘텐츠 -->
@@ -106,15 +105,17 @@
       <!-- 📊 성장률 계산기 -->
       <section id="growthTab" class="tab-content">
         <h2>📊 성장률 계산기</h2>
+
         <input id="growthName" placeholder="펫 이름 입력">
         <input id="growthLevel" placeholder="현재 레벨">
         <input id="growthHP" placeholder="체력(HP)">
         <input id="growthAtk" placeholder="공격력(Atk)">
         <input id="growthDef" placeholder="방어력(Def)">
         <input id="growthAgi" placeholder="순발력(Agi)">
+
         <button id="growthRun">조회</button>
 
-        <div id="growthResult" class="growth-table"></div>
+        <div id="growthResult" class="growth-table" style="margin-top:10px;"></div>
       </section>
 
       <!-- ⭕ 오목 AI -->
@@ -156,7 +157,11 @@ function fitOmokHeight() {
 window.addEventListener("resize", fitOmokHeight);
 </script>
 
+<!-- 기존 사이트 로직 -->
 <script src="./app.js"></script>
+
+<!-- 🔥 성장률 계산기 엔진 추가 -->
+<script src="./data/growth.js"></script>
 
 <script>
   const tabs = {
@@ -203,5 +208,3 @@ window.addEventListener("resize", fitOmokHeight);
 
 </body>
 </html>
-
-
