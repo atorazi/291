@@ -388,7 +388,7 @@ const exeEngine = {
     },
 
     /* -----------------------------
-       FP 공식 (EXE/Nova 동일)
+       FP 공식 (L/4 정상)
     ----------------------------- */
     calcFP(step){
         const n = this.n;
@@ -423,7 +423,7 @@ const exeEngine = {
     },
 
     /* -----------------------------
-       raw 공식 (NovaSA 원본)
+       raw 공식 (Nova 원본)
     ----------------------------- */
     calcRaw(stat, carry, FP, denom){
         return ((stat + carry) * FP / denom) + 0.5;
@@ -518,11 +518,14 @@ const exeEngine = {
         setTimeout(()=>box.style.opacity=0,1200);
     },
 
+    /* =====================================================
+       🔥 FP 정상 + 15개 제한 브루트포스
+    ====================================================== */
     searchNext(step, targetNext){
         this.logAppend(`===== [${step-1}→${step}] next=${targetNext} 탐색 시작 =====`);
 
         const main = this.el("mainStat").value;
-        const maxResult = this.n(this.el("maxResult").value) || 10;
+        const maxResult = 15;
 
         const pf = (step-1)+""+step;
         const base = this.n(this.el("base"+pf).value);
@@ -532,9 +535,24 @@ const exeEngine = {
         const prev = this.carryHistory[step-1];
         const quest = this.n(this.el("quest"+pf).value);
 
+        const lv01 = this.n(this.el("lv01").value);
+        const lv12 = this.n(this.el("lv12").value);
+        const lv23 = this.n(this.el("lv23").value);
+        const lv34 = this.n(this.el("lv34").value);
+        const lv45 = this.n(this.el("lv45").value);
+
+        let L = 0;
+        if(step===2) L = lv01 + lv12 - 170;
+        if(step===3) L = lv01 + lv12 + lv23 - 255;
+        if(step===4) L = lv01 + lv12 + lv23 + lv34 - 340;
+        if(step===5) L = lv01 + lv12 + lv23 + lv34 + lv45 - 425;
+
         const other = ["str","pow","vit","agi"].filter(k=>k!==main);
 
         let results = [];
+        let count = 0;
+
+        const denom = total + prev.str + prev.pow + prev.vit + prev.agi;
 
         for(let m=0; m<=total; m++){
             for(let a=0; a<=total; a++){
@@ -549,8 +567,7 @@ const exeEngine = {
                         stats[other[1]] = b;
                         stats[other[2]] = c;
 
-                        const denom = total + prev.str + prev.pow + prev.vit + prev.agi;
-                        const FP = Math.floor( denom/12 + quest/2 + 0 ); // L/4 제외 (brute simpl)
+                        const FP = Math.floor( denom/12 + quest/2 + L/4 );
 
                         const r1 = ((stats.str+prev.str)*FP/denom)+0.5;
                         const r2 = ((stats.pow+prev.pow)*FP/denom)+0.5;
@@ -564,14 +581,15 @@ const exeEngine = {
 
                         if(next == targetNext){
                             results.push({stats, FP});
-                            if(results.length >= maxResult) break;
+                            count++;
+                            if(count >= maxResult) break;
                         }
                     }
-                    if(results.length >= maxResult) break;
+                    if(count >= maxResult) break;
                 }
-                if(results.length >= maxResult) break;
+                if(count >= maxResult) break;
             }
-            if(results.length >= maxResult) break;
+            if(count >= maxResult) break;
         }
 
         if(results.length === 0){
@@ -582,19 +600,18 @@ const exeEngine = {
 
         results.forEach((r,i)=>{
             this.logAppend(
-                `[${i+1}] FP=${r.FP} | `
-                + `STR=${r.stats.str}, POW=${r.stats.pow}, `
-                + `VIT=${r.stats.vit}, AGI=${r.stats.agi}`
+                `[${i+1}] FP=${r.FP} | ` +
+                `STR=${r.stats.str}, POW=${r.stats.pow}, ` +
+                `VIT=${r.stats.vit}, AGI=${r.stats.agi}`
             );
         });
 
         this.showStatus(`${results.length}건`);
     }
-
 };
 
 /* ================================
-   페이지 로드시 total 자동계산
+   페이지 로드시 자동 계산
 ================================ */
 window.onload = ()=>{
     for(let i=1;i<=5;i++){
