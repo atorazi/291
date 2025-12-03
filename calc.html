@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>🐂 미노타우르스의 장난감 </title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+:root {
+  --bg:#0b1426;
+  --panel:#0f1e3a;
+  --soft:#11234a;
+  --ring:#1e396e;
+  --ink:#eaf2ff;
+  --accent:#ffd447;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; padding:20px;
+  background:var(--bg); color:var(--ink);
+  font-family:"Pretendard","Malgun Gothic",system-ui,sans-serif;
+}
+.wrap{
+  max-width:750px;
+  margin:0 auto;
+  background:var(--panel);
+  padding:20px 24px;
+  border:1px solid var(--ring);
+  border-radius:16px;
+  box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+h1{
+  margin:0 0 22px; text-align:center;
+  color:var(--accent); font-size:22px;
+}
+label{ font-size:14px; margin-bottom:4px; display:block; }
+input{
+  width:100%; padding:9px 10px;
+  border-radius:10px;
+  border:1px solid #263654;
+  background:#0b1426; color:var(--ink);
+  font-size:14px;
+  outline:none;
+}
+input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px rgba(255,212,71,.35);
+}
+.row{ display:flex; gap:10px; margin-bottom:12px; }
+.col{ flex:1; }
+
+button{
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer; font-weight:600;
+  font-size:14px;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#ffd447,#ffba27);
+  border:none; color:#1a1200;
+}
+.btn-ghost{
+  background:transparent;
+  border:1px solid #334466;
+  color:var(--ink);
+}
+
+.result-box{
+  margin-top:16px;
+  white-space:pre-line;
+  border-radius:12px;
+  padding:14px;
+  background:#0d1b36;
+  border:1px solid #22406f;
+  font-size:14px;
+}
+
+.hidden-input { display:none !important; }
+
+.error{color:#ff6f91;}
+.muted{color:#9fb1dd; font-size:12px;}
+
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<h1>🐂 미노타우르스의 장난감 - 차이</h1>
+
+<!-- 1) 페트 선택 -->
+<label>펫 이름</label>
+<input id="petName" list="petList" placeholder="페트 이름..." />
+<datalist id="petList"></datalist>
+<p id="debugBox" class="muted">데이터 로딩 중...</p>
+
+<!-- 2) So -->
+<label style="margin-top:14px;">S급 초기치 </label>
+<div class="row">
+  <div class="col"><input id="soHp" readonly></div>
+  <div class="col"><input id="soAtk" readonly></div>
+  <div class="col"><input id="soDef" readonly></div>
+  <div class="col"><input id="soAgi" readonly></div>
+</div>
+
+<!-- 3) Δ 입력 -->
+<label>내 펫 초기치 ‘차이’ 입력  
+<span class="muted">(정석 +- 값 입력)</span></label>
+<div class="row">
+  <div class="col"><input id="dHp" placeholder="체력"></div>
+  <div class="col"><input id="dAtk" placeholder="공격력"></div>
+  <div class="col"><input id="dDef" placeholder="방어력"></div>
+  <div class="col"><input id="dAgi" placeholder="순발력"></div>
+</div>
+
+<!-- 4) 숨김 k/u/e -->
+<input id="coefK" class="hidden-input">
+<input id="uHp" class="hidden-input">
+<input id="uAtk" class="hidden-input">
+<input id="uDef" class="hidden-input">
+<input id="uAgi" class="hidden-input">
+<input id="coefE" class="hidden-input">
+
+<!-- 5) Buttons -->
+<div style="display:flex; gap:10px;">
+  <button id="btnCalc" class="btn-primary">Rank8 확률 계산</button>
+  <button id="btnClear" class="btn-ghost">초기화</button>
+</div>
+
+<!-- Result -->
+<div id="resultBox" class="result-box">결과가 표시됩니다.</div>
+
+</div>
+
+
+<script>
+
+const $ = id => document.getElementById(id);
+let PET_DB = [];
+
+/* -------- JSON 로딩 -------- */
+async function loadData(){
+  const pets = await fetch("data/pets.json").then(r=>r.json());
+  const spet = await fetch("data/spet.json").then(r=>r.json());
+
+  PET_DB = spet.map(s => {
+    const key = normalize(s["이름"]);
+    const p = pets.find(x => normalize(x.name) === key);
+    return {
+      name:s["이름"],
+      key,
+      so:{
+        hp:s["초기치(stat)"]["내구력(HP)"],
+        atk:s["초기치(stat)"]["공격력(Atk)"],
+        def:s["초기치(stat)"]["방어력(Def)"],
+        agi:s["초기치(stat)"]["순발력(Agi)"]
+      },
+      sg:{
+        hp:s["성장률(up)"]["내구력(HP)"],
+        atk:s["성장률(up)"]["공격력(Atk)"],
+        def:s["성장률(up)"]["방어력(Def)"],
+        agi:s["성장률(up)"]["순발력(Agi)"]
+      },
+      k:p?.initnum ?? null,
+      u:p ? {hp:p.hp, atk:p.atk, def:p.def, agi:p.agi} : null
+    };
+  });
+
+  $("petList").innerHTML =
+    PET_DB.map(x=>`<option value="${x.name}">`).join("");
+
+  $("debugBox").textContent = "데이터 로드 완료.";
+}
+
+function normalize(s){
+  return String(s||"").replace(/\s+/g,"").toLowerCase();
+}
+
+/* -------- 펫 선택 -------- */
+function selectPet(name){
+  const key = normalize(name);
+  const p = PET_DB.find(x => x.key === key);
+  if(!p){ $("debugBox").textContent="펫 없음"; return; }
+
+  $("debugBox").textContent = `선택됨: ${p.name}`;
+
+  $("soHp").value = p.so.hp;
+  $("soAtk").value = p.so.atk;
+  $("soDef").value = p.so.def;
+  $("soAgi").value = p.so.agi;
+
+  $("coefK").value = p.k;
+  $("uHp").value = p.u.hp;
+  $("uAtk").value = p.u.atk;
+  $("uDef").value = p.u.def;
+  $("uAgi").value = p.u.agi;
+}
+
+/* -------- lunya 엔진 -------- */
+function enumerateAll(k, u, obs){
+  let matches=0, rank8=0;
+  const fac = k/100;
+
+  for(let ar=-2; ar<=2; ar++)
+  for(let dr=-2; dr<=2; dr++)
+  for(let gr=-2; gr<=2; gr++)
+  for(let hr=-2; hr<=2; hr++)
+  for(let ab=0; ab<=10; ab++)
+  for(let db=0; db<=10; db++)
+  for(let gb=0; gb<=10; gb++){
+
+    const hb = 10 - ab - db - gb;
+    if(hb < 0 || hb > 10) continue;
+
+    const A = u.atk + ar + ab;
+    const D = u.def + dr + db;
+    const G = u.agi + gr + gb;
+    const H = u.hp + hr + hb;
+
+    const iA=A*fac, iD=D*fac, iG=G*fac, iH=H*fac;
+
+    const atk = Math.floor(iH*0.1 + iA + iD*0.1 + iG*0.05);
+    const def = Math.floor(iH*0.1 + iA*0.1 + iD + iG*0.05);
+    const agi = Math.floor(iG);
+    const hp  = Math.floor(iH*4 + iA + iD + iG);
+
+    if(hp===obs.hp && atk===obs.atk && def===obs.def && agi===obs.agi){
+      matches++;
+      if(ar+dr+gr+hr === 8) rank8++;
+    }
+  }
+
+  return {matches, rank8};
+}
+
+/* -------- 메인 계산 -------- */
+function calcRank8(){
+
+  const So = {
+    hp:+$("soHp").value,
+    atk:+$("soAtk").value,
+    def:+$("soDef").value,
+    agi:+$("soAgi").value,
+  };
+
+  const Δ = {
+    hp:+$("dHp").value,
+    atk:+$("dAtk").value,
+    def:+$("dDef").value,
+    agi:+$("dAgi").value,
+  };
+
+  const obs = {
+    hp:So.hp + Δ.hp,
+    atk:So.atk + Δ.atk,
+    def:So.def + Δ.def,
+    agi:So.agi + Δ.agi,
+  };
+
+  const k = +$("coefK").value;
+  const u = {
+    hp:+$("uHp").value,
+    atk:+$("uAtk").value,
+    def:+$("uDef").value,
+    agi:+$("uAgi").value,
+  };
+
+  const R = enumerateAll(k, u, obs);
+
+  const appear = R.matches / 178750 * 100;
+  const success = R.matches ? (R.rank8 / R.matches * 100) : 0;
+
+  $("resultBox").textContent =
+`■ Rank8 계산 결과
+
+총 경우의 수: 178,750
+일치 조합: ${R.matches}
+Rank8 조합: ${R.rank8}
+
+출현 확률: ${appear.toFixed(5)} %
+Rank8 성공 확률: ${success.toFixed(5)} %
+
+
+`;
+}
+
+/* -------- 초기화 -------- */
+function clearAll(){
+  ["dHp","dAtk","dDef","dAgi"].forEach(id=>$(id).value="");
+  $("resultBox").textContent="초기화 완료.";
+}
+
+/* -------- 이벤트 -------- */
+window.onload = ()=>{
+  loadData();
+  $("petName").onchange = e => selectPet(e.target.value);
+  $("btnCalc").onclick = calcRank8;
+  $("btnClear").onclick = clearAll;
+};
+</script>
+
+</body>
+</html>
