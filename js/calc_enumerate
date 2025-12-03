@@ -1,0 +1,120 @@
+/* ============================================================================
+   calc_enumerate.js
+   ---------------------------------------------------------------------------
+   - (k, u, e) 가 확정된 상태에서 전수탐색으로 확률 계산
+   - 총 경우의 수 = 178,750 (kokodas 기준과 동일)
+============================================================================ */
+
+const RANDOM_RANGE = [-2, -1, 0, 1, 2];
+const TOTAL_CASES = 178750;
+
+/* ---------------------------------------------------------------------------
+   초기치 SO 계산 (r, b 포함)
+--------------------------------------------------------------------------- */
+function calcSO_full(stat, u, r, b, k, e) {
+    const f = (k / 100) * (e / 10000);
+
+    const uh = u.hp  + r.hp  + b.hp  + 2.5;
+    const ua = u.atk + r.atk + b.atk + 2.5;
+    const ud = u.def + r.def + b.def + 2.5;
+    const ug = u.agi + r.agi + b.agi + 2.5;
+
+    let base = 0;
+
+    switch (stat) {
+        case "hp":  base = 4 * uh + ua + ud + ug; break;
+        case "atk": base = 0.1 * uh + 1 * ua + 0.1 * ud + 0.05 * ug; break;
+        case "def": base = 0.1 * uh + 0.1 * ua + 1 * ud + 0.05 * ug; break;
+        case "agi": base = ug; break;
+    }
+
+    return Math.floor(f * base);
+}
+
+/* ---------------------------------------------------------------------------
+   b(보너스) 가능한 모든 조합 생성 286개
+--------------------------------------------------------------------------- */
+function generateBonusList() {
+    const result = [];
+    const stats = ["hp", "atk", "def", "agi"];
+
+    function dfs(idx, remain, obj) {
+        if (idx === 3) {
+            // 마지막은 남은 값 전부 부여
+            const o = { ...obj };
+            o[stats[idx]] = remain;
+            result.push(o);
+            return;
+        }
+        for (let v = 0; v <= remain; v++) {
+            const o2 = { ...obj };
+            o2[stats[idx]] = v;
+            dfs(idx + 1, remain - v, o2);
+        }
+    }
+
+    // total bonus 0~10
+    for (let t = 0; t <= 10; t++) {
+        dfs(0, t, {});
+    }
+
+    return result;
+}
+
+const BONUS_LIST = generateBonusList();
+
+/* ---------------------------------------------------------------------------
+   전수탐색 실행
+--------------------------------------------------------------------------- */
+function enumerateProbability(S0, coeff) {
+    const { hp: S0_hp, atk: S0_atk, def: S0_def, agi: S0_agi } = S0;
+    const { k, u, e } = coeff;
+
+    let matches = 0;
+    let rank8 = 0;
+
+    for (const rhp of RANDOM_RANGE) {
+        for (const ratk of RANDOM_RANGE) {
+            for (const rdef of RANDOM_RANGE) {
+                for (const ragi of RANDOM_RANGE) {
+
+                    const r = { hp: rhp, atk: ratk, def: rdef, agi: ragi };
+
+                    for (const b of BONUS_LIST) {
+
+                        const soHp  = calcSO_full("hp",  u, r, b, k, e);
+                        const soAtk = calcSO_full("atk", u, r, b, k, e);
+                        const soDef = calcSO_full("def", u, r, b, k, e);
+                        const soAgi = calcSO_full("agi", u, r, b, k, e);
+
+                        // ★ 조건: 관측된 S0와 동일해야 함
+                        if (soHp === S0_hp &&
+                            soAtk === S0_atk &&
+                            soDef === S0_def &&
+                            soAgi === S0_agi) {
+
+                            matches++;
+
+                            // 보너스 합 ≥ 8 → Rank 8 조건
+                            const sumB = b.hp + b.atk + b.def + b.agi;
+                            if (sumB >= 8) rank8++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const appear = (matches / TOTAL_CASES) * 100;
+    const success = matches > 0 ? (rank8 / matches) * 100 : 0;
+    const tries = success > 0 ? (100 / success).toFixed(2) : "N/A";
+
+    return {
+        matches,
+        rank8,
+        appearance: appear.toFixed(4),
+        success: success.toFixed(4),
+        expectedTry: tries
+    };
+}
+
